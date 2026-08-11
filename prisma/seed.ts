@@ -24,15 +24,16 @@ const categories = [
 ];
 
 async function main() {
-  await Promise.all(
-    categories.map(([name, module, kind], sortOrder) =>
-      prisma.category.upsert({
-        where: { userId_module_name: { userId: null, module, name } },
-        update: { kind, sortOrder },
-        create: { name, module, kind, sortOrder },
-      }),
-    ),
-  );
+  for (const [name, module, kind] of categories) {
+    const sortOrder = categories.findIndex((category) => category[0] === name && category[1] === module);
+    const existing = await prisma.category.findFirst({ where: { userId: null, module, name } });
+
+    if (existing) {
+      await prisma.category.update({ where: { id: existing.id }, data: { kind, sortOrder } });
+    } else {
+      await prisma.category.create({ data: { name, module, kind, sortOrder } });
+    }
+  }
 }
 
 main().finally(() => prisma.$disconnect());
