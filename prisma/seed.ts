@@ -7,8 +7,18 @@ const categories = [
   ["Інші доходи", FinanceModule.GENERAL, CategoryKind.INCOME],
   ["Повсякденні витрати", FinanceModule.GENERAL, CategoryKind.EXPENSE],
   ["Накопичення", FinanceModule.GENERAL, CategoryKind.BOTH],
+  ["Продаж особистих речей", FinanceModule.FAMILY, CategoryKind.INCOME],
+  ["Разовий дохід", FinanceModule.FAMILY, CategoryKind.INCOME],
+  ["Інший дохід", FinanceModule.FAMILY, CategoryKind.INCOME],
+  ["Продукти", FinanceModule.FAMILY, CategoryKind.EXPENSE],
+  ["Дім", FinanceModule.FAMILY, CategoryKind.EXPENSE],
+  ["Автомобіль", FinanceModule.FAMILY, CategoryKind.EXPENSE],
   ["Діти", FinanceModule.FAMILY, CategoryKind.EXPENSE],
-  ["Здоров'я", FinanceModule.FAMILY, CategoryKind.EXPENSE],
+  ["Лікування", FinanceModule.FAMILY, CategoryKind.EXPENSE],
+  ["Подарунки", FinanceModule.FAMILY, CategoryKind.EXPENSE],
+  ["Розваги та подорожі", FinanceModule.FAMILY, CategoryKind.EXPENSE],
+  ["Одяг", FinanceModule.FAMILY, CategoryKind.EXPENSE],
+  ["Проче", FinanceModule.FAMILY, CategoryKind.EXPENSE],
   ["Продукти", FinanceModule.FAMILY, CategoryKind.EXPENSE],
   ["Дім", FinanceModule.FAMILY, CategoryKind.EXPENSE],
   ["Транспорт", FinanceModule.FAMILY, CategoryKind.EXPENSE],
@@ -23,6 +33,8 @@ const categories = [
   ["Продаж продукції", FinanceModule.POULTRY, CategoryKind.INCOME],
 ];
 
+const archivedFamilyCategories = ["Здоров'я", "Транспорт", "Розваги", "Подорожі", "Обов'язкові платежі", "Інше"];
+
 async function main() {
   for (const [name, module, kind] of categories) {
     const sortOrder = categories.findIndex((category) => category[0] === name && category[1] === module);
@@ -34,6 +46,11 @@ async function main() {
       await prisma.category.create({ data: { name, module, kind, sortOrder } });
     }
   }
+
+  await prisma.category.updateMany({
+    where: { userId: null, module: FinanceModule.FAMILY, name: { in: archivedFamilyCategories } },
+    data: { isArchived: true },
+  });
 }
 
 main().finally(() => prisma.$disconnect());
