@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Codex Task №2 — Family Finance implementation is ready for production deployment.
+Codex Task №2 — Family Finance deployed and production-verified.
 
 ## Implemented
 
@@ -27,6 +27,9 @@ Codex Task №2 — Family Finance implementation is ready for production deploy
 - `npm run lint`, `npm run typecheck`, `npm test` (7 tests), and `npm run build` pass locally.
 - Railway production health check and the public `/api/health` endpoint return `200`.
 - Task №2 local validation: `lint`, `typecheck`, `build`, and 17 automated tests pass.
+- Railway applied migration `20260812090000_add_family_finance`; the idempotent seed completed successfully.
+- Task №2 production workflow was manually verified: Family income, Family expense, and split receipt creation.
+- Family data was confirmed to remain available after a Railway service restart.
 
 ## Not implemented
 
@@ -35,4 +38,4 @@ Codex Task №2 — Family Finance implementation is ready for production deploy
 
 ## Next step
 
-Deploy the Family Finance migration and verify the production workflow.
+Task №2 is complete. Do not start Task №3 until a separate approved specification is provided.
