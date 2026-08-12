@@ -24,7 +24,7 @@ export function saleTotal(quantity?: number | null, weightKg?: string | null, pr
   if (explicitTotal) return explicitTotal;
   if (!price || (!quantity && !weightKg)) throw new Error("Вкажіть ціну та кількість або вагу.");
   const multiplier = weightKg ?? String(quantity);
-  return (Number(multiplier) * Number(price)).toFixed(2);
+  return (Number(multiplier.replace(",", ".")) * Number(price.replace(",", "."))).toFixed(2);
 }
 
 export function poultryReport(items: Array<{ type: "INCOME" | "EXPENSE"; amount: string; categoryName?: string | null }>) {
