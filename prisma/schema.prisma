@@ -43,36 +43,73 @@ enum SavingsGoalStatus {
   ARCHIVED
 }
 
+enum PoultryBatchStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum PoultryBatchSource {
+  INCUBATION
+  PURCHASE
+  OTHER
+}
+
+enum PoultryMovementType {
+  ADD
+  SALE
+  MORTALITY
+  FAMILY_USE
+  TRANSFER
+  ADJUSTMENT
+}
+
+enum IncubationStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum FeedUsageType {
+  ASSIGNED
+  FINISHED
+}
+
 model User {
-  id              String        @id @default(cuid())
-  email           String        @unique
-  name            String?
-  passwordHash    String
-  timezone        String        @default("Europe/Kyiv")
-  defaultCurrency String        @default("UAH") @db.Char(3)
-  startingBalance Decimal       @default(0) @db.Decimal(18, 2)
-  transactions    Transaction[]
-  categories      Category[]
-  receipts        Receipt[]
-  recurringPayments RecurringPayment[]
-  savingsGoals    SavingsGoal[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                         String                      @id @default(cuid())
+  email                      String                      @unique
+  name                       String?
+  passwordHash               String
+  timezone                   String                      @default("Europe/Kyiv")
+  defaultCurrency            String                      @default("UAH") @db.Char(3)
+  startingBalance            Decimal                     @default(0) @db.Decimal(18, 2)
+  transactions               Transaction[]
+  categories                 Category[]
+  receipts                   Receipt[]
+  recurringPayments          RecurringPayment[]
+  savingsGoals               SavingsGoal[]
+  poultryBatches             PoultryBatch[]
+  poultryMovements           PoultryMovement[]
+  incubationBatches          IncubationBatch[]
+  feedProducts               FeedProduct[]
+  feedLots                   FeedLot[]
+  poultrySales               PoultrySale[]
+  poultryOperationalExpenses PoultryOperationalExpense[]
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
 }
 
 model Category {
-  id         String        @id @default(cuid())
-  userId     String?
-  user       User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  module     FinanceModule @default(GENERAL)
-  name       String
-  icon       String?
-  kind       CategoryKind  @default(BOTH)
-  sortOrder  Int           @default(0)
-  isArchived Boolean       @default(false)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  transactions Transaction[]
+  id                String                      @id @default(cuid())
+  userId            String?
+  user              User?                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module            FinanceModule               @default(GENERAL)
+  name              String
+  icon              String?
+  kind              CategoryKind                @default(BOTH)
+  sortOrder         Int                         @default(0)
+  isArchived        Boolean                     @default(false)
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+  transactions      Transaction[]
   recurringPayments RecurringPayment[]
 
   @@unique([userId, module, name])
@@ -80,32 +117,201 @@ model Category {
 }
 
 model Transaction {
-  id            String            @id @default(cuid())
-  userId        String
-  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type          TransactionType
-  amount        Decimal           @db.Decimal(18, 2)
-  currency      String            @default("UAH") @db.Char(3)
-  operationDate DateTime          @db.Date
-  categoryId    String?
-  category      Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  module        FinanceModule     @default(GENERAL)
-  description   String?
-  source        TransactionSource @default(WEB)
-  receiptId     String?
-  receipt       Receipt?          @relation(fields: [receiptId], references: [id], onDelete: SetNull)
-  savingsMovement SavingsMovement?
+  id                 String                     @id @default(cuid())
+  userId             String
+  user               User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type               TransactionType
+  amount             Decimal                    @db.Decimal(18, 2)
+  currency           String                     @default("UAH") @db.Char(3)
+  operationDate      DateTime                   @db.Date
+  categoryId         String?
+  category           Category?                  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  module             FinanceModule              @default(GENERAL)
+  description        String?
+  source             TransactionSource          @default(WEB)
+  receiptId          String?
+  receipt            Receipt?                   @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+  savingsMovement    SavingsMovement?
   recurringPaymentId String?
-  recurringPayment RecurringPayment? @relation(fields: [recurringPaymentId], references: [id], onDelete: SetNull)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  deletedAt     DateTime?
+  recurringPayment   RecurringPayment?          @relation(fields: [recurringPaymentId], references: [id], onDelete: SetNull)
+  poultrySale        PoultrySale?               @relation("SaleIncome")
+  feedLot            FeedLot?                   @relation("FeedPurchaseExpense")
+  operationalExpense PoultryOperationalExpense?
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  deletedAt          DateTime?
 
   @@index([userId, operationDate])
   @@index([userId, deletedAt])
   @@index([categoryId])
   @@index([receiptId])
   @@index([recurringPaymentId])
+}
+
+model PoultryBatch {
+  id                         String                      @id @default(cuid())
+  userId                     String
+  user                       User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                       String
+  birdType                   String
+  breed                      String?
+  startDate                  DateTime                    @db.Date
+  startingQuantity           Int
+  currentQuantity            Int
+  source                     PoultryBatchSource
+  status                     PoultryBatchStatus          @default(ACTIVE)
+  comment                    String?
+  incubationBatchId          String?
+  incubationBatch            IncubationBatch?            @relation(fields: [incubationBatchId], references: [id], onDelete: SetNull)
+  incubationItemId           String?                     @unique
+  incubationItem             IncubationBatchItem?        @relation(fields: [incubationItemId], references: [id], onDelete: SetNull)
+  movements                  PoultryMovement[]
+  feedUsages                 FeedUsage[]
+  sales                      PoultrySale[]
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
+  deletedAt                  DateTime?
+  poultryOperationalExpenses PoultryOperationalExpense[]
+
+  @@index([userId, status, deletedAt])
+}
+
+model PoultryMovement {
+  id            String              @id @default(cuid())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batchId       String
+  batch         PoultryBatch        @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  type          PoultryMovementType
+  quantity      Int
+  operationDate DateTime            @db.Date
+  comment       String?
+  saleId        String?             @unique
+  sale          PoultrySale?        @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  createdAt     DateTime            @default(now())
+  deletedAt     DateTime?
+
+  @@index([userId, batchId, operationDate])
+}
+
+model IncubationBatch {
+  id             String                @id @default(cuid())
+  userId         String
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  setDate        DateTime              @db.Date
+  birdType       String
+  status         IncubationStatus      @default(ACTIVE)
+  comment        String?
+  items          IncubationBatchItem[]
+  poultryBatches PoultryBatch[]
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  deletedAt      DateTime?
+
+  @@index([userId, status, deletedAt])
+}
+
+model IncubationBatchItem {
+  id                String          @id @default(cuid())
+  incubationBatchId String
+  incubationBatch   IncubationBatch @relation(fields: [incubationBatchId], references: [id], onDelete: Cascade)
+  poultryBatch      PoultryBatch?
+  breed             String
+  setQuantity       Int
+  infertileQuantity Int             @default(0)
+  lossQuantity      Int             @default(0)
+  hatchedQuantity   Int             @default(0)
+  comment           String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@index([incubationBatchId])
+}
+
+model FeedProduct {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  type      String?
+  bagSizeKg Decimal?  @db.Decimal(10, 2)
+  lots      FeedLot[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, name])
+}
+
+model FeedLot {
+  id                    String      @id @default(cuid())
+  userId                String
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId             String
+  product               FeedProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  purchaseTransactionId String      @unique
+  purchaseTransaction   Transaction @relation("FeedPurchaseExpense", fields: [purchaseTransactionId], references: [id], onDelete: Cascade)
+  purchasedBags         Int
+  availableBags         Int
+  costPerBag            Decimal     @db.Decimal(18, 2)
+  purchaseDate          DateTime    @db.Date
+  comment               String?
+  usages                FeedUsage[]
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  deletedAt             DateTime?
+
+  @@index([userId, productId, deletedAt])
+}
+
+model FeedUsage {
+  id            String        @id @default(cuid())
+  lotId         String
+  lot           FeedLot       @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  batchId       String
+  batch         PoultryBatch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  bags          Int
+  type          FeedUsageType @default(ASSIGNED)
+  operationDate DateTime      @db.Date
+  comment       String?
+  createdAt     DateTime      @default(now())
+
+  @@index([lotId, batchId])
+}
+
+model PoultrySale {
+  id                  String           @id @default(cuid())
+  userId              String
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  batchId             String?
+  batch               PoultryBatch?    @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  buyer               String?
+  itemName            String
+  quantity            Int?
+  weightKg            Decimal?         @db.Decimal(10, 3)
+  price               Decimal?         @db.Decimal(18, 2)
+  totalAmount         Decimal          @db.Decimal(18, 2)
+  operationDate       DateTime         @db.Date
+  comment             String?
+  incomeTransactionId String           @unique
+  incomeTransaction   Transaction      @relation("SaleIncome", fields: [incomeTransactionId], references: [id], onDelete: Cascade)
+  movement            PoultryMovement?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  deletedAt           DateTime?
+
+  @@index([userId, operationDate, deletedAt])
+}
+
+model PoultryOperationalExpense {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId String        @unique
+  transaction   Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  batchId       String?
+  batch         PoultryBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  createdAt     DateTime      @default(now())
 }
 
 model Receipt {
@@ -123,21 +329,21 @@ model Receipt {
 }
 
 model RecurringPayment {
-  id          String            @id @default(cuid())
-  userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name        String
-  amount      Decimal           @db.Decimal(18, 2)
-  currency    String            @default("UAH") @db.Char(3)
-  categoryId  String?
-  category    Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  frequency   RecurringFrequency @default(MONTHLY)
-  nextDueDate DateTime          @db.Date
-  isActive    Boolean           @default(true)
-  note        String?
+  id           String             @id @default(cuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  amount       Decimal            @db.Decimal(18, 2)
+  currency     String             @default("UAH") @db.Char(3)
+  categoryId   String?
+  category     Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  frequency    RecurringFrequency @default(MONTHLY)
+  nextDueDate  DateTime           @db.Date
+  isActive     Boolean            @default(true)
+  note         String?
   transactions Transaction[]
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   @@index([userId, isActive, nextDueDate])
 }

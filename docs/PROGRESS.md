@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Codex Task №2 — Family Finance deployed and production-verified.
+Codex Task №3 — Poultry module implementation is ready for production deployment.
 
 ## Implemented
 
@@ -19,6 +19,8 @@ Codex Task №2 — Family Finance deployed and production-verified.
 - Production CRUD and persistence were manually verified: income, expense, edit, soft delete, restart, and balance recalculation.
 - Family Finance: personal Family income and expense CRUD, category-required manual forms, soft delete, reports, split receipts, savings goals/movements, and recurring payments.
 - New project-first navigation: Home, Projects, Add, Reports, Settings. Family is the only active project in Task №2.
+- Poultry: batches and protected flock movements, sales with one linked income, feed inventory by bags, feed assignment without duplicate expense, incubation batches with multiple breeds, and operational expenses.
+- Poultry and Family can be selected in Projects, Add, Dashboard, and Reports.
 
 ## Verified
 
@@ -30,12 +32,14 @@ Codex Task №2 — Family Finance deployed and production-verified.
 - Railway applied migration `20260812090000_add_family_finance`; the idempotent seed completed successfully.
 - Task №2 production workflow was manually verified: Family income, Family expense, and split receipt creation.
 - Family data was confirmed to remain available after a Railway service restart.
+- Task №3 local validation: `lint`, `typecheck`, `build`, and 26 automated tests pass.
 
 ## Not implemented
 
 - Voice recognition and photo receipt upload are represented as future input surfaces only; no external recognition integration is configured.
-- Poultry, cosmetology, goods, and infobusiness remain inactive future projects.
+- Voice recognition and photo receipt upload remain UI surfaces without external APIs.
+- Cosmetology, goods, and infobusiness remain inactive future projects.
 
 ## Next step
 
-Task №2 is complete. Do not start Task №3 until a separate approved specification is provided.
+Deploy the Poultry migration, run the idempotent seed, and verify the production scenario before starting another task.

@@ -26,14 +26,18 @@ const categories = [
   ["Подорожі", FinanceModule.FAMILY, CategoryKind.EXPENSE],
   ["Обов'язкові платежі", FinanceModule.FAMILY, CategoryKind.EXPENSE],
   ["Інше", FinanceModule.FAMILY, CategoryKind.BOTH],
-  ["Корм", FinanceModule.POULTRY, CategoryKind.EXPENSE],
-  ["Птахи", FinanceModule.POULTRY, CategoryKind.BOTH],
-  ["Обладнання", FinanceModule.POULTRY, CategoryKind.EXPENSE],
-  ["Ветеринарія", FinanceModule.POULTRY, CategoryKind.EXPENSE],
+  ["Корма", FinanceModule.POULTRY, CategoryKind.EXPENSE],
+  ["Покупка птиці", FinanceModule.POULTRY, CategoryKind.EXPENSE],
+  ["Інкубаційні яйця", FinanceModule.POULTRY, CategoryKind.EXPENSE],
+  ["Ветеринарія / препарати", FinanceModule.POULTRY, CategoryKind.EXPENSE],
+  ["Обладнання і матеріали", FinanceModule.POULTRY, CategoryKind.EXPENSE],
+  ["Електрика / утримання", FinanceModule.POULTRY, CategoryKind.EXPENSE],
+  ["Проче", FinanceModule.POULTRY, CategoryKind.EXPENSE],
   ["Продаж продукції", FinanceModule.POULTRY, CategoryKind.INCOME],
 ];
 
 const archivedFamilyCategories = ["Здоров'я", "Транспорт", "Розваги", "Подорожі", "Обов'язкові платежі", "Інше"];
+const archivedPoultryCategories = ["Корм", "Птахи", "Обладнання", "Ветеринарія"];
 
 async function main() {
   for (const [name, module, kind] of categories) {
@@ -51,6 +55,7 @@ async function main() {
     where: { userId: null, module: FinanceModule.FAMILY, name: { in: archivedFamilyCategories } },
     data: { isArchived: true },
   });
+  await prisma.category.updateMany({ where: { userId: null, module: FinanceModule.POULTRY, name: { in: archivedPoultryCategories } }, data: { isArchived: true } });
 }
 
 main().finally(() => prisma.$disconnect());
