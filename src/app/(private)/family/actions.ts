@@ -35,7 +35,8 @@ export async function deleteFamilyOperationAction(formData: FormData) {
 
 export async function createSplitReceiptAction(formData: FormData) {
   const user = await requireUser();
-  const items = [0, 1, 2].map((index) => ({ categoryId: formData.get(`categoryId-${index}`), amount: formData.get(`amount-${index}`), description: formData.get(`description-${index}`) })).filter((item) => item.categoryId && item.amount);
+  const indexes = [...formData.keys()].flatMap((key) => key.match(/^categoryId-(\d+)$/)?.[1] ?? []);
+  const items = indexes.map((index) => ({ categoryId: formData.get(`categoryId-${index}`), amount: formData.get(`amount-${index}`), description: formData.get(`description-${index}`) })).filter((item) => item.categoryId && item.amount);
   const parsed = splitReceiptSchema.parse({ operationDate: formData.get("operationDate"), description: formData.get("description"), items });
   const receipt = await createSplitReceipt(user.id, parsed);
   refresh();

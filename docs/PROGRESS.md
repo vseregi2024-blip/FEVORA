@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Codex Task №3 — Poultry module implementation is ready for production deployment.
+Codex Task №3.1 — unified mobile-first interface implementation is ready for production deployment.
 
 ## Implemented
 
@@ -21,6 +21,10 @@ Codex Task №3 — Poultry module implementation is ready for production deploy
 - New project-first navigation: Home, Projects, Add, Reports, Settings. Family is the only active project in Task №2.
 - Poultry: batches and protected flock movements, sales with one linked income, feed inventory by bags, feed assignment without duplicate expense, incubation batches with multiple breeds, and operational expenses.
 - Poultry and Family can be selected in Projects, Add, Dashboard, and Reports.
+- Unified warm mobile-first design system: shared cards, status badges, section headers, empty states, line icons, responsive forms, and highlighted bottom navigation.
+- Redesigned Dashboard, Projects, Add, Family, Poultry, Reports, Journal, and Settings around real production data.
+- Poultry is split into short dedicated routes for flock, feed inventory, incubation, sales, and operational expenses; the long combined Poultry form is removed from the dashboard.
+- Split receipts support adding and removing lines in the UI while retaining the existing no-double-count server logic.
 
 ## Verified
 
@@ -33,6 +37,7 @@ Codex Task №3 — Poultry module implementation is ready for production deploy
 - Task №2 production workflow was manually verified: Family income, Family expense, and split receipt creation.
 - Family data was confirmed to remain available after a Railway service restart.
 - Task №3 local validation: `lint`, `typecheck`, `build`, and 26 automated tests pass.
+- Task №3.1 local validation: `lint`, `typecheck`, `build`, and 26 automated tests pass.
 
 ## Not implemented
 
@@ -42,4 +47,4 @@ Codex Task №3 — Poultry module implementation is ready for production deploy
 
 ## Next step
 
-Deploy the Poultry migration, run the idempotent seed, and verify the production scenario before starting another task.
+Deploy the UI update and verify the responsive production interface before starting another task.

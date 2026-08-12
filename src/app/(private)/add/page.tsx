@@ -1,11 +1,6 @@
 import Link from "next/link";
 
-const options = [
-  ["Вручну · Сімʼя", "Швидко внесіть Family-дохід або витрату.", "/family"],
-  ["Вручну · Птахівництво", "Партії, корми, продажі, інкубація та витрати.", "/poultry"],
-  ["Текст", "Оберіть проєкт і введіть дані вручну; автоматичного вгадування немає.", "/projects"],
-  ["Голос", "Підготовлено для майбутнього підключення розпізнавання.", null],
-  ["Фото", "Підготовлено для майбутнього прикріплення чека.", null],
-] as const;
+import { AppIcon } from "@/components/ui/icons";
 
-export default function AddPage() { return <><header className="page-header"><div><p className="eyebrow">Додати</p><h1>Новий запис</h1><p className="muted">Спочатку оберіть проєкт. FEVORA не вгадує напрям автоматично.</p></div></header><div className="project-grid">{options.map(([title, description, href]) => href ? <Link href={href} className="project-card active" key={title}><b>{title}</b><span>{description}</span><em>Відкрити →</em></Link> : <article className="project-card" key={title}><b>{title}</b><span>{description}</span><em>Підготовлено</em></article>)}</div></>; }
+const options = [["Семья", "money", "Доход, расход, сбережения и платежи", "/family"],["Птицеводство", "flock", "Партии, корм, продажи, инкубация", "/poultry"],["Голос", "add", "Распознавание появится позднее", null],["Фото чека", "add", "OCR пока не подключён", null]] as const;
+export default function AddPage(){return <><header className="page-header"><div><p className="eyebrow">Добавить</p><h1>Что хотите записать?</h1><p className="muted">Сначала выберите проект — FEVORA ничего не угадывает автоматически.</p></div></header><section className="project-grid">{options.map(([title,icon,description,href])=>href?<Link href={href} className="project-card active" key={title}><AppIcon name={icon}/><b>{title}</b><span>{description}</span><em>Выбрать →</em></Link>:<article className="project-card future" key={title}><AppIcon name={icon}/><b>{title}</b><span>{description}</span><em>Скоро</em></article>)}</section><section className="app-card" style={{marginTop:16}}><h2>Голос и фото</h2><p className="muted">Это честные заготовки интерфейса: распознавание речи и чеков ещё не подключено, поэтому данные не создаются автоматически.</p></section></>;}

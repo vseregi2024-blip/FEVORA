@@ -1,11 +1,6 @@
 import Link from "next/link";
 
-const projects: Array<{ name: string; description: string; href?: "/family" | "/poultry"; active: boolean }> = [
-  { name: "Сімʼя", description: "Особисті доходи, витрати, сбереження та обовʼязкові платежі.", href: "/family", active: true },
-  { name: "Косметологія", description: "Буде додано окремою задачею.", active: false },
-  { name: "Птахівництво", description: "Партії, інкубація, корми, продажі та фінансовий результат.", href: "/poultry", active: true },
-  { name: "Товарка", description: "Буде додано окремою задачею.", active: false },
-  { name: "Інфобізнес", description: "Буде додано окремою задачею.", active: false },
-];
+import { StatusBadge } from "@/components/ui/app-card";
 
-export default function ProjectsPage() { return <><header className="page-header"><div><p className="eyebrow">Проєкти</p><h1>Ваші напрямки</h1></div></header><div className="project-grid">{projects.map((project) => project.href ? <Link className="project-card active" href={project.href} key={project.name}><b>{project.name}</b><span>{project.description}</span><em>Відкрити →</em></Link> : <article className="project-card" key={project.name}><b>{project.name}</b><span>{project.description}</span><em>Незабаром</em></article>)}</div></>; }
+const projects: Array<{ name: string; description: string; href?: "/family" | "/poultry" }> = [{ name:"Семья", description:"Личные доходы, расходы, сбережения и регулярные платежи.", href:"/family" },{ name:"Птицеводство", description:"Партии птицы, корма, инкубация, продажи и расходы.", href:"/poultry" },{name:"Косметология",description:"Отдельный проект появится позднее."},{name:"Товарка",description:"Отдельный проект появится позднее."},{name:"Инфобизнес",description:"Отдельный проект появится позднее."}];
+export default function ProjectsPage(){return <><header className="page-header"><div><p className="eyebrow">Проекты</p><h1>Ваши направления</h1><p className="muted">Открывайте только то, что ведёте сейчас.</p></div></header><section className="project-grid">{projects.map((project)=>project.href?<Link className="project-card active" href={project.href} key={project.name}><StatusBadge tone="success">Активен</StatusBadge><b>{project.name}</b><span>{project.description}</span><em>Открыть →</em></Link>:<article className="project-card future" key={project.name}><StatusBadge tone="soon">Скоро</StatusBadge><b>{project.name}</b><span>{project.description}</span></article>)}</section></>;}
