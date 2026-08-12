@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Codex Task №3.1 — unified mobile-first interface implementation is complete locally and awaiting the final production deployment verification.
+Codex Task №3.1 — unified mobile-first interface implementation is deployed to production. The final authenticated visual smoke check requires the owner session.
 
 ## Implemented
 
@@ -45,6 +45,7 @@ Codex Task №3.1 — unified mobile-first interface implementation is complete 
 - Task №3 local validation: `lint`, `typecheck`, `build`, and 26 automated tests pass.
 - Task №3.1 local validation: `lint`, `typecheck`, `build`, and 26 automated tests pass.
 - Task №3.1 completion validation: `lint`, `typecheck`, `build`, and 26 automated tests pass after adding Poultry detail routes, confirmation dialog, loading and error states.
+- Railway deployment `85b2558d-4aa7-4a08-80e5-584e3507f9ec` completed successfully on 13 August 2026; public `/api/health` returned `200` with `{"status":"ok"}`.
 
 ## Not implemented
 
@@ -54,4 +55,4 @@ Codex Task №3.1 — unified mobile-first interface implementation is complete 
 
 ## Next step
 
-Deploy the completed Task №3.1 UI update, verify production at mobile and desktop widths, then record the release commit and health check. Do not start Task №4 automatically.
+Sign in to production and verify the refreshed Poultry batch and incubation detail pages on a phone-width screen; this requires the owner session. Do not start Task №4 automatically.
