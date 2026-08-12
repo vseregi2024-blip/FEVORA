@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Codex Task №3.1 — unified mobile-first interface implementation is ready for production deployment.
+Codex Task №3.1 — unified mobile-first interface implementation is complete locally and awaiting the final production deployment verification.
 
 ## Implemented
 
@@ -25,6 +25,12 @@ Codex Task №3.1 — unified mobile-first interface implementation is ready for
 - Redesigned Dashboard, Projects, Add, Family, Poultry, Reports, Journal, and Settings around real production data.
 - Poultry is split into short dedicated routes for flock, feed inventory, incubation, sales, and operational expenses; the long combined Poultry form is removed from the dashboard.
 - Split receipts support adding and removing lines in the UI while retaining the existing no-double-count server logic.
+- Poultry batch details show real flock movements, assigned feed, sales, linked costs and financial result without creating duplicate transactions.
+- Incubation batch details show real breed rows and their hatch results, with safe actions to update results or create a flock batch.
+- Feed inventory is inventory-first: available bags and each feed lot are shown before compact actions for purchase and assignment.
+- Deletion uses one reusable confirmation dialog for financial operations and Poultry sales.
+- Shared loading and user-friendly error states are available for protected application routes.
+- Remaining interactive form labels and operation details use Russian, the current primary interface language.
 
 ## Verified
 
@@ -38,13 +44,14 @@ Codex Task №3.1 — unified mobile-first interface implementation is ready for
 - Family data was confirmed to remain available after a Railway service restart.
 - Task №3 local validation: `lint`, `typecheck`, `build`, and 26 automated tests pass.
 - Task №3.1 local validation: `lint`, `typecheck`, `build`, and 26 automated tests pass.
+- Task №3.1 completion validation: `lint`, `typecheck`, `build`, and 26 automated tests pass after adding Poultry detail routes, confirmation dialog, loading and error states.
 
 ## Not implemented
 
-- Voice recognition and photo receipt upload are represented as future input surfaces only; no external recognition integration is configured.
-- Voice recognition and photo receipt upload remain UI surfaces without external APIs.
+- Voice recognition and photo receipt upload remain future UI surfaces without external APIs.
 - Cosmetology, goods, and infobusiness remain inactive future projects.
+- Task №4 has not been started.
 
 ## Next step
 
-Deploy the UI update and verify the responsive production interface before starting another task.
+Deploy the completed Task №3.1 UI update, verify production at mobile and desktop widths, then record the release commit and health check. Do not start Task №4 automatically.

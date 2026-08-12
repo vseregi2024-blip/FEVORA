@@ -1,0 +1,36 @@
+.backdrop {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: grid;
+  align-items: end;
+  padding: 20px;
+  background: #24302e80;
+}
+
+.dialog {
+  width: min(520px, 100%);
+  margin: 0 auto;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.dialog h2 {
+  margin-bottom: 8px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+@media (min-width: 801px) {
+  .backdrop {
+    align-items: center;
+  }
+}

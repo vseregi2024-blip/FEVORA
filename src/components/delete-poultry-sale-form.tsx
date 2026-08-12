@@ -1,5 +1,5 @@
-"use client";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 export function DeletePoultrySaleForm({ id, action }: { id: string; action: (formData: FormData) => void | Promise<void> }) {
-  return <form action={action} onSubmit={(event) => { if (!window.confirm("Удалить продажу? Связанный доход и движение поголовья будут исключены из расчётов.")) event.preventDefault(); }}><input type="hidden" name="id" value={id}/><button className="text-link">Удалить</button></form>;
+  return <ConfirmationDialog action={action} fieldName="id" fieldValue={id} trigger="Удалить" title="Удалить продажу?" description="Связанный доход и движение поголовья будут исключены из расчётов, а данные останутся в истории." confirmLabel="Удалить" triggerClassName="text-link" />;
 }
