@@ -48,7 +48,7 @@ function decimalAmount(amount: string, type: TransactionType) {
 }
 
 export async function createTransaction(userId: string, input: TransactionInput) {
-  if (input.module === FinanceModule.GOODS || input.module === FinanceModule.INFOBUSINESS) throw new Error("Операции проекта создаются только в его разделе, чтобы сохранить связанные данные корректными.");
+  if (input.module === FinanceModule.GOODS || input.module === FinanceModule.INFOBUSINESS || input.module === FinanceModule.COSMETOLOGY) throw new Error("Операции проекта создаются только в его разделе, чтобы сохранить связанные данные корректными.");
   await assertCategoryOwner(userId, input.categoryId, input.module);
   return prisma.transaction.create({
     data: {
@@ -65,10 +65,10 @@ export async function createTransaction(userId: string, input: TransactionInput)
 }
 
 export async function updateTransaction(userId: string, id: string, input: TransactionInput) {
-  const existing = await prisma.transaction.findFirst({ where: { id, userId, deletedAt: null }, include: { productPurchase: true, productSale: true, goodsExpense: true, infoSale: true, infoExpense: true } });
+  const existing = await prisma.transaction.findFirst({ where: { id, userId, deletedAt: null }, include: { productPurchase: true, productSale: true, goodsExpense: true, infoSale: true, infoExpense: true, cosmetologyVisit: true, cosmetologyLot: true, cosmetologyExpense: true } });
   if (!existing) throw new Error("Операцію не знайдено.");
-  if (existing.module === FinanceModule.GOODS || existing.module === FinanceModule.INFOBUSINESS || existing.productPurchase || existing.productSale || existing.goodsExpense || existing.infoSale || existing.infoExpense) throw new Error("Эту операцию нужно изменять в соответствующем проекте, чтобы связанные данные остались корректными.");
-  if (input.module === FinanceModule.GOODS || input.module === FinanceModule.INFOBUSINESS) throw new Error("Операции проекта создаются только в соответствующем разделе.");
+  if (existing.module === FinanceModule.GOODS || existing.module === FinanceModule.INFOBUSINESS || existing.module === FinanceModule.COSMETOLOGY || existing.productPurchase || existing.productSale || existing.goodsExpense || existing.infoSale || existing.infoExpense || existing.cosmetologyVisit || existing.cosmetologyLot || existing.cosmetologyExpense) throw new Error("Эту операцию нужно изменять в соответствующем проекте, чтобы связанные данные остались корректными.");
+  if (input.module === FinanceModule.GOODS || input.module === FinanceModule.INFOBUSINESS || input.module === FinanceModule.COSMETOLOGY) throw new Error("Операции проекта создаются только в соответствующем разделе.");
   await assertCategoryOwner(userId, input.categoryId, input.module);
   return prisma.transaction.update({
     where: { id },
@@ -84,9 +84,9 @@ export async function updateTransaction(userId: string, id: string, input: Trans
 }
 
 export async function softDeleteTransaction(userId: string, id: string) {
-  const existing = await prisma.transaction.findFirst({ where: { id, userId, deletedAt: null }, include: { productPurchase: true, productSale: true, goodsExpense: true, infoSale: true, infoExpense: true } });
+  const existing = await prisma.transaction.findFirst({ where: { id, userId, deletedAt: null }, include: { productPurchase: true, productSale: true, goodsExpense: true, infoSale: true, infoExpense: true, cosmetologyVisit: true, cosmetologyLot: true, cosmetologyExpense: true } });
   if (!existing) throw new Error("Операцію не знайдено.");
-  if (existing.module === FinanceModule.GOODS || existing.module === FinanceModule.INFOBUSINESS || existing.productPurchase || existing.productSale || existing.goodsExpense || existing.infoSale || existing.infoExpense) throw new Error("Эту операцию нужно удалять в соответствующем проекте, чтобы связанные данные остались корректными.");
+  if (existing.module === FinanceModule.GOODS || existing.module === FinanceModule.INFOBUSINESS || existing.module === FinanceModule.COSMETOLOGY || existing.productPurchase || existing.productSale || existing.goodsExpense || existing.infoSale || existing.infoExpense || existing.cosmetologyVisit || existing.cosmetologyLot || existing.cosmetologyExpense) throw new Error("Эту операцию нужно удалять в соответствующем проекте, чтобы связанные данные остались корректными.");
   return prisma.transaction.update({ where: { id }, data: { deletedAt: new Date() } });
 }
 

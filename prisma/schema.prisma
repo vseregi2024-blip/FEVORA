@@ -21,6 +21,49 @@ enum FinanceModule {
   POULTRY
   GOODS
   INFOBUSINESS
+  COSMETOLOGY
+}
+
+enum CosmetologyUnit {
+  UNIT
+  ML
+  VIAL
+  SYRINGE
+  PACKAGE
+  PIECE
+  PAIR
+  OTHER
+}
+
+enum CosmetologyInventoryMovementType {
+  PURCHASE
+  PROCEDURE_USE
+  WRITE_OFF
+  ADJUSTMENT
+}
+
+enum CosmetologyClientStatus {
+  NEW
+  REGULAR
+  VIP
+  POTENTIAL
+  INACTIVE
+}
+
+enum CosmetologyContactMethod {
+  PHONE
+  VIBER
+  WHATSAPP
+  TELEGRAM
+  INSTAGRAM
+  TIKTOK
+}
+
+enum CosmetologyPlanStatus {
+  RECOMMENDED
+  SCHEDULED
+  COMPLETED
+  CANCELLED
 }
 
 enum ProductUnit {
@@ -139,6 +182,14 @@ model User {
   infoSales                  InfoSale[]
   infoExpenseCategories      InfoExpenseCategory[]
   infoExpenses               InfoExpense[]
+  cosmetologyClients         CosmetologyClient[]
+  cosmetologyProcedureTemplates CosmetologyProcedureTemplate[]
+  cosmetologyInventoryItems  CosmetologyInventoryItem[]
+  cosmetologyInventoryLots   CosmetologyInventoryLot[]
+  cosmetologyInventoryMovements CosmetologyInventoryMovement[]
+  cosmetologyVisits          CosmetologyVisit[]
+  cosmetologyExpenseCategories CosmetologyExpenseCategory[]
+  cosmetologyExpenses        CosmetologyExpense[]
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
 }
@@ -188,6 +239,9 @@ model Transaction {
   goodsExpense       GoodsOperationalExpense?
   infoSale           InfoSale?                   @relation("InfoSaleIncome")
   infoExpense        InfoExpense?                @relation("InfoExpenseTransaction")
+  cosmetologyVisit   CosmetologyVisit?           @relation("CosmetologyVisitIncome")
+  cosmetologyLot     CosmetologyInventoryLot?    @relation("CosmetologyLotExpense")
+  cosmetologyExpense CosmetologyExpense?         @relation("CosmetologyExpenseTransaction")
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime                   @updatedAt
   deletedAt          DateTime?
@@ -606,6 +660,238 @@ model InfoExpense {
   deletedAt     DateTime?
 
   @@index([userId, productId, categoryId, deletedAt])
+}
+
+model CosmetologyClient {
+  id                String                   @id @default(cuid())
+  userId            String
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastName          String
+  firstName         String
+  phone             String
+  phoneLastFour     String
+  birthDate         DateTime?                @db.Date
+  contactMethod     CosmetologyContactMethod @default(PHONE)
+  contactValue      String?
+  source            String?
+  status            CosmetologyClientStatus  @default(NEW)
+  specialMarks      String[]                 @default([])
+  notes             String?
+  allergies         String?
+  contraindications String?
+  medicalNotes      String?
+  visits            CosmetologyVisit[]
+  planItems         CosmetologyTreatmentPlanItem[]
+  photos            CosmetologyClientPhoto[]
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  deletedAt         DateTime?
+
+  @@index([userId, lastName, firstName, deletedAt])
+  @@index([userId, phoneLastFour, deletedAt])
+}
+
+model CosmetologyClientPhoto {
+  id        String             @id @default(cuid())
+  userId    String
+  clientId  String
+  client    CosmetologyClient  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  storageKey String
+  kind      String
+  note      String?
+  createdAt DateTime           @default(now())
+  deletedAt DateTime?
+
+  @@index([userId, clientId, deletedAt])
+}
+
+model CosmetologyProcedureTemplate {
+  id           String                        @id @default(cuid())
+  userId       String
+  user         User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  category     String
+  basePrice    Decimal?                      @db.Decimal(18, 2)
+  durationMinutes Int?
+  isArchived   Boolean                       @default(false)
+  comment      String?
+  materials    CosmetologyProcedureMaterialTemplate[]
+  visits       CosmetologyVisit[]
+  createdAt    DateTime                      @default(now())
+  updatedAt    DateTime                      @updatedAt
+  deletedAt    DateTime?
+
+  @@unique([userId, name])
+  @@index([userId, isArchived, deletedAt])
+}
+
+model CosmetologyProcedureMaterialTemplate {
+  id          String                         @id @default(cuid())
+  templateId  String
+  template    CosmetologyProcedureTemplate   @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  itemId      String
+  item        CosmetologyInventoryItem       @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  quantity    Decimal                        @db.Decimal(18, 3)
+  createdAt   DateTime                       @default(now())
+
+  @@unique([templateId, itemId])
+}
+
+model CosmetologyInventoryItem {
+  id           String                         @id @default(cuid())
+  userId       String
+  user         User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  category     String
+  brand        String?
+  unit         CosmetologyUnit                @default(UNIT)
+  currentQuantity Decimal                     @default(0) @db.Decimal(18, 3)
+  comment      String?
+  lots         CosmetologyInventoryLot[]
+  movements    CosmetologyInventoryMovement[]
+  templateMaterials CosmetologyProcedureMaterialTemplate[]
+  usages       CosmetologyProcedureMaterialUsage[]
+  createdAt    DateTime                       @default(now())
+  updatedAt    DateTime                       @updatedAt
+  deletedAt    DateTime?
+
+  @@unique([userId, name])
+  @@index([userId, category, deletedAt])
+}
+
+model CosmetologyInventoryLot {
+  id             String                         @id @default(cuid())
+  userId         String
+  user           User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId         String
+  item           CosmetologyInventoryItem       @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  initialQuantity Decimal                       @db.Decimal(18, 3)
+  availableQuantity Decimal                     @db.Decimal(18, 3)
+  totalAmount    Decimal                        @db.Decimal(18, 2)
+  unitCost       Decimal                        @db.Decimal(18, 4)
+  purchaseDate   DateTime                       @db.Date
+  expiryDate     DateTime?                      @db.Date
+  batchNumber    String?
+  comment        String?
+  expenseTransactionId String?                  @unique
+  expenseTransaction Transaction?               @relation("CosmetologyLotExpense", fields: [expenseTransactionId], references: [id], onDelete: Cascade)
+  usages         CosmetologyProcedureMaterialUsage[]
+  movements      CosmetologyInventoryMovement[]
+  createdAt      DateTime                       @default(now())
+  updatedAt      DateTime                       @updatedAt
+  deletedAt      DateTime?
+
+  @@index([userId, itemId, purchaseDate, deletedAt])
+}
+
+model CosmetologyInventoryMovement {
+  id            String                            @id @default(cuid())
+  userId        String
+  user          User                              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itemId        String
+  item          CosmetologyInventoryItem          @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  lotId         String?
+  lot           CosmetologyInventoryLot?          @relation(fields: [lotId], references: [id], onDelete: SetNull)
+  visitId       String?
+  visit         CosmetologyVisit?                 @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  type          CosmetologyInventoryMovementType
+  quantity      Decimal                           @db.Decimal(18, 3)
+  operationDate DateTime                          @db.Date
+  comment       String?
+  createdAt     DateTime                          @default(now())
+  deletedAt     DateTime?
+
+  @@index([userId, itemId, operationDate, deletedAt])
+}
+
+model CosmetologyVisit {
+  id                String                           @id @default(cuid())
+  userId            String
+  user              User                             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId          String
+  client            CosmetologyClient                @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  procedureTemplateId String?
+  procedureTemplate CosmetologyProcedureTemplate?    @relation(fields: [procedureTemplateId], references: [id], onDelete: SetNull)
+  procedureName     String
+  operationDate     DateTime                         @db.Date
+  paymentAmount     Decimal                          @db.Decimal(18, 2)
+  costAmount        Decimal                          @default(0) @db.Decimal(18, 2)
+  profitAmount      Decimal                          @default(0) @db.Decimal(18, 2)
+  comment           String?
+  incomeTransactionId String                         @unique
+  incomeTransaction Transaction                      @relation("CosmetologyVisitIncome", fields: [incomeTransactionId], references: [id], onDelete: Cascade)
+  usages            CosmetologyProcedureMaterialUsage[]
+  movements         CosmetologyInventoryMovement[]
+  createdAt         DateTime                         @default(now())
+  updatedAt         DateTime                         @updatedAt
+  deletedAt         DateTime?
+
+  @@index([userId, clientId, operationDate, deletedAt])
+}
+
+model CosmetologyProcedureMaterialUsage {
+  id        String                    @id @default(cuid())
+  visitId   String
+  visit     CosmetologyVisit           @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  itemId    String
+  item      CosmetologyInventoryItem   @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  lotId     String
+  lot       CosmetologyInventoryLot    @relation(fields: [lotId], references: [id], onDelete: Restrict)
+  quantity  Decimal                    @db.Decimal(18, 3)
+  unitCost  Decimal                    @db.Decimal(18, 4)
+  totalCost Decimal                    @db.Decimal(18, 2)
+  createdAt DateTime                   @default(now())
+  deletedAt DateTime?
+
+  @@index([visitId, deletedAt])
+  @@index([itemId, deletedAt])
+}
+
+model CosmetologyExpenseCategory {
+  id         String                   @id @default(cuid())
+  userId     String
+  user       User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  sortOrder  Int                      @default(0)
+  isArchived Boolean                  @default(false)
+  expenses   CosmetologyExpense[]
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, isArchived, sortOrder])
+}
+
+model CosmetologyExpense {
+  id            String                     @id @default(cuid())
+  userId        String
+  user          User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId String                     @unique
+  transaction   Transaction                @relation("CosmetologyExpenseTransaction", fields: [transactionId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      CosmetologyExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  comment       String?
+  createdAt     DateTime                   @default(now())
+  updatedAt     DateTime                   @updatedAt
+  deletedAt     DateTime?
+
+  @@index([userId, categoryId, deletedAt])
+}
+
+model CosmetologyTreatmentPlanItem {
+  id          String                  @id @default(cuid())
+  userId      String
+  clientId    String
+  client      CosmetologyClient       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  title       String
+  plannedDate DateTime?               @db.Date
+  status      CosmetologyPlanStatus   @default(RECOMMENDED)
+  note        String?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  deletedAt   DateTime?
+
+  @@index([userId, clientId, status, deletedAt])
 }
 
 model Receipt {
