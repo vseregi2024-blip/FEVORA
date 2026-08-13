@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Codex Task №5 — модуль «Инфобизнес» задеплоен в production. Остался только authenticated owner smoke test из ТЗ; он не выполнялся без доступа к учётной записи и без создания тестовых данных вслепую.
+Codex Task №5 — модуль «Инфобизнес» задеплоен в production и прошёл authenticated owner smoke test.
 
 ## Implemented
 
@@ -64,6 +64,7 @@ Codex Task №5 — модуль «Инфобизнес» задеплоен в 
 - Task №5 final local validation: `lint`, `typecheck`, production `build`, and 58 automated tests pass.
 - Task №5 additive migration `20260813130000_add_infobusiness` applied during successful Railway deployment `2947cca9-c909-44e4-86ac-bcb33c91b8d8` on 13 August 2026; public `/api/health` returned `200` with `{"status":"ok"}`.
 - Task №5 implementation commit: `1423cf8 feat: add infobusiness module`.
+- Task №5 authenticated owner production smoke test completed manually on 13 August 2026, including the course sale and expense flow; test records were handled by the owner.
 
 ## Not implemented
 
@@ -72,4 +73,4 @@ Codex Task №5 — модуль «Инфобизнес» задеплоен в 
 
 ## Next step
 
-Sign in as the owner and run the Task №5 production smoke flow from the specification, including product, sales, product/general expenses, custom category, edit and soft delete. Confirm that Family, Poultry and Tovarka records remain visible before and after a restart. No production test records were created automatically.
+Wait for the next owner-approved technical specification. Do not start Cosmetology or any other module automatically.
