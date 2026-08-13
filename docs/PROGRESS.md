@@ -2,9 +2,7 @@
 
 ## Current stage
 
-Стартовые остатки товарки, их себестоимость и цена продажи по умолчанию реализуются как завершающее уточнение Task №4.
-
-Codex Task №4 — Tovarka is deployed to production. The remaining acceptance step is an authenticated owner UI smoke test.
+Codex Task №5 — модуль «Инфобизнес» реализован локально и ожидает применения migration, production deploy и owner smoke test.
 
 ## Implemented
 
@@ -36,6 +34,13 @@ Codex Task №4 — Tovarka is deployed to production. The remaining acceptance 
 - Task №4 Tovarka: products/categories, purchase lots, FIFO sale allocations, stock movements, operational expenses, protected purchase edits/deletions, sale edits/soft deletion, and product-profit reporting.
 - Delivery can be included in a purchase lot cost or recorded as a separately linked operational expense.
 - Product creation supports an opening stock balance with unit cost (a FIFO lot without a duplicate expense) and a default sale price for future sales.
+- Task №5 InfoBusiness: products/courses with online, offline and hybrid formats, free-form product types, base price, status, dates and comments.
+- InfoBusiness sales create one linked Income transaction atomically; editing updates the same Income and soft delete excludes both records from analytics.
+- InfoBusiness expenses create one linked Expense transaction atomically and support either a concrete product or an explicitly selected general expense.
+- General InfoBusiness expenses are included only in the project-wide result and never reduce a product’s profit automatically.
+- User-owned expense categories are initialized with the required starters and can be created, renamed and safely archived without breaking history.
+- Service/subscription expenses support an optional service name and analytics group expenses by categories and services.
+- InfoBusiness is active in Projects, Add, Dashboard, Journal and general Reports; Cosmetology remains marked as future work.
 
 ## Verified
 
@@ -54,12 +59,14 @@ Codex Task №4 — Tovarka is deployed to production. The remaining acceptance 
 - Task №4 migration `20260813022000_add_goods` was applied as an additive production migration; current startup logs report four migrations with none pending, and the idempotent seed completes successfully.
 - Task №4 final production deployment `e28ed36a-095a-485b-81e6-61fbce0e9714` completed successfully on 13 August 2026; public `/api/health` returned `200` with `{"status":"ok"}` after restart.
 - Task №4 local validation: `lint`, `typecheck`, production `build`, and 38 automated tests pass.
+- Task №5 baseline validation before changes: `lint`, `typecheck`, production `build`, and 38 automated tests pass after Prisma Client generation.
+- Task №5 final local validation: `lint`, `typecheck`, production `build`, and 58 automated tests pass.
 
 ## Not implemented
 
 - Voice recognition and photo receipt upload remain future UI surfaces without external APIs.
-- Cosmetology and infobusiness remain inactive future projects.
+- Cosmetology remains an inactive future project.
 
 ## Next step
 
-Sign in as the owner and run the short Tovarka acceptance flow: two purchases (10 × 500 and 10 × 550), sale of 12 × 750, edit, soft delete, and confirm FIFO/stock/report values. Family and Poultry records must remain visible before and after a restart.
+Apply `20260813130000_add_infobusiness`, deploy the Task №5 build, and run the owner production smoke flow from the Task №5 specification. Confirm that Family, Poultry and Tovarka records remain visible before and after a restart. The provided workspace is an exported source tree without `.git`, so commit hash and GitHub synchronization must be completed from a Git worktree.

@@ -1,0 +1,12 @@
+import Link from "next/link";
+
+import { DeleteInfoBusinessRecordForm } from "@/components/delete-infobusiness-record-form";
+import { dateToInput } from "@/lib/dates";
+import { requireUser } from "@/server/auth";
+import { getInfoDashboard, getInfoExpense } from "@/server/infobusiness";
+import { deleteInfoExpenseAction, updateInfoExpenseAction } from "../../actions";
+
+export default async function InfoExpensePage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireUser(); const { id } = await params; const [expense, dashboard] = await Promise.all([getInfoExpense(user.id, id), getInfoDashboard(user.id)]);
+  return <><header className="page-header"><div><p className="eyebrow">Инфобизнес · Расход</p><h1>Редактировать расход</h1></div><Link href="/infobusiness/expenses" className="text-link">К расходам</Link></header><form action={updateInfoExpenseAction} className="transaction-form"><input type="hidden" name="id" value={expense.id}/><label>Сумма<input name="amount" required inputMode="decimal" defaultValue={expense.transaction.amount.toString()}/></label><label>Категория<select name="categoryId" defaultValue={expense.categoryId}><option value="">Выберите категорию</option>{dashboard.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label>+ Новая категория<input name="newCategoryName" placeholder="Необязательно"/></label><label>К чему относится<select name="productId" defaultValue={expense.productId ?? ""}><option value="">Общий расход Инфобизнеса</option>{dashboard.products.filter((product) => product.status !== "ARCHIVED" || product.id === expense.productId).map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}</select></label><div className="form-grid"><label>Дата<input name="operationDate" type="date" required defaultValue={dateToInput(expense.transaction.operationDate)}/></label><label>Название сервиса<input name="serviceName" defaultValue={expense.serviceName ?? ""} placeholder="Только для сервисов"/></label></div><label>Описание<input name="description" required defaultValue={expense.transaction.description ?? ""}/></label><label>Комментарий<input name="comment" defaultValue={expense.comment ?? ""}/></label><button className="button primary">Сохранить без второго расхода</button></form><div className="danger-zone"><h2>Удаление</h2><p>Связанный Expense будет исключён из отчётов и прибыли.</p><DeleteInfoBusinessRecordForm id={expense.id} action={deleteInfoExpenseAction} kind="expense"/></div></>;
+}

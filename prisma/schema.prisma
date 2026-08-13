@@ -20,6 +20,7 @@ enum FinanceModule {
   FAMILY
   POULTRY
   GOODS
+  INFOBUSINESS
 }
 
 enum ProductUnit {
@@ -32,6 +33,19 @@ enum ProductUnit {
 
 enum ProductStatus {
   ACTIVE
+  ARCHIVED
+}
+
+enum InfoProductFormat {
+  ONLINE
+  OFFLINE
+  HYBRID
+}
+
+enum InfoProductStatus {
+  PREPARATION
+  ACTIVE
+  COMPLETED
   ARCHIVED
 }
 
@@ -121,6 +135,10 @@ model User {
   productInventoryLots       ProductInventoryLot[]
   productInventoryMovements  ProductInventoryMovement[]
   goodsOperationalExpenses   GoodsOperationalExpense[]
+  infoProducts               InfoProduct[]
+  infoSales                  InfoSale[]
+  infoExpenseCategories      InfoExpenseCategory[]
+  infoExpenses               InfoExpense[]
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
 }
@@ -168,6 +186,8 @@ model Transaction {
   productPurchase    ProductPurchase?           @relation("ProductPurchaseExpense")
   productSale        ProductSale?               @relation("ProductSaleIncome")
   goodsExpense       GoodsOperationalExpense?
+  infoSale           InfoSale?                   @relation("InfoSaleIncome")
+  infoExpense        InfoExpense?                @relation("InfoExpenseTransaction")
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime                   @updatedAt
   deletedAt          DateTime?
@@ -509,6 +529,80 @@ model GoodsOperationalExpense {
   purchaseId    String?     @unique
   purchase      ProductPurchase? @relation("PurchaseDeliveryExpense", fields: [purchaseId], references: [id], onDelete: Cascade)
   createdAt     DateTime    @default(now())
+}
+
+model InfoProduct {
+  id               String             @id @default(cuid())
+  userId           String
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  type             String
+  format           InfoProductFormat
+  basePrice        Decimal?           @db.Decimal(18, 2)
+  startDate        DateTime?          @db.Date
+  endDate          DateTime?          @db.Date
+  status           InfoProductStatus  @default(ACTIVE)
+  comment          String?
+  sales            InfoSale[]
+  expenses         InfoExpense[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?
+
+  @@unique([userId, name])
+  @@index([userId, status, deletedAt])
+}
+
+model InfoSale {
+  id                  String       @id @default(cuid())
+  userId              String
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId           String
+  product             InfoProduct  @relation(fields: [productId], references: [id], onDelete: Restrict)
+  buyer               String?
+  seats               Int          @default(1)
+  comment             String?
+  incomeTransactionId String       @unique
+  incomeTransaction   Transaction  @relation("InfoSaleIncome", fields: [incomeTransactionId], references: [id], onDelete: Cascade)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  deletedAt           DateTime?
+
+  @@index([userId, productId, deletedAt])
+}
+
+model InfoExpenseCategory {
+  id         String        @id @default(cuid())
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  sortOrder  Int           @default(0)
+  isArchived Boolean       @default(false)
+  expenses   InfoExpense[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, isArchived, sortOrder])
+}
+
+model InfoExpense {
+  id            String              @id @default(cuid())
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId String              @unique
+  transaction   Transaction         @relation("InfoExpenseTransaction", fields: [transactionId], references: [id], onDelete: Cascade)
+  categoryId    String
+  category      InfoExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  productId     String?
+  product       InfoProduct?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  serviceName   String?
+  comment       String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  deletedAt     DateTime?
+
+  @@index([userId, productId, categoryId, deletedAt])
 }
 
 model Receipt {
