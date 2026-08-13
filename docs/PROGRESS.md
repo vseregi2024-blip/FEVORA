@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Codex Task №4 — Tovarka implementation is ready for the production migration and smoke test.
+Codex Task №4 — Tovarka is deployed to production. The remaining acceptance step is an authenticated owner UI smoke test.
 
 ## Implemented
 
@@ -48,6 +48,9 @@ Codex Task №4 — Tovarka implementation is ready for the production migration
 - Task №3.1 local validation: `lint`, `typecheck`, `build`, and 26 automated tests pass.
 - Task №3.1 completion validation: `lint`, `typecheck`, `build`, and 26 automated tests pass after adding Poultry detail routes, confirmation dialog, loading and error states.
 - Railway deployment `85b2558d-4aa7-4a08-80e5-584e3507f9ec` completed successfully on 13 August 2026; public `/api/health` returned `200` with `{"status":"ok"}`.
+- Task №4 migration `20260813022000_add_goods` was applied as an additive production migration; current startup logs report four migrations with none pending, and the idempotent seed completes successfully.
+- Task №4 final production deployment `e28ed36a-095a-485b-81e6-61fbce0e9714` completed successfully on 13 August 2026; public `/api/health` returned `200` with `{"status":"ok"}` after restart.
+- Task №4 local validation: `lint`, `typecheck`, production `build`, and 38 automated tests pass.
 
 ## Not implemented
 
@@ -56,4 +59,4 @@ Codex Task №4 — Tovarka implementation is ready for the production migration
 
 ## Next step
 
-Apply the additive Task №4 migration, deploy, and perform the controlled Tovarka production smoke test while confirming existing Family and Poultry data remains unchanged.
+Sign in as the owner and run the short Tovarka acceptance flow: two purchases (10 × 500 and 10 × 550), sale of 12 × 750, edit, soft delete, and confirm FIFO/stock/report values. Family and Poultry records must remain visible before and after a restart.
