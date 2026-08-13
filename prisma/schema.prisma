@@ -560,6 +560,9 @@ model InfoSale {
   productId           String
   product             InfoProduct  @relation(fields: [productId], references: [id], onDelete: Restrict)
   buyer               String?
+  buyerPhone          String?
+  buyerEmail          String?
+  instagramUrl        String?
   seats               Int          @default(1)
   comment             String?
   incomeTransactionId String       @unique

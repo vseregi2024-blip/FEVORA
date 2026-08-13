@@ -24,13 +24,13 @@ export async function updateInfoProductAction(formData: FormData) {
 
 export async function createInfoSaleAction(formData: FormData) {
   const user = await requireUser();
-  await createInfoSale(user.id, infoSaleSchema.parse({ productId: formData.get("productId"), amount: formData.get("amount"), operationDate: formData.get("operationDate"), buyer: formValue(formData, "buyer"), seats: formData.get("seats") || "1", comment: formValue(formData, "comment") }));
+  await createInfoSale(user.id, infoSaleSchema.parse({ productId: formData.get("productId"), amount: formData.get("amount"), operationDate: formData.get("operationDate"), buyer: formValue(formData, "buyer"), buyerPhone: formValue(formData, "buyerPhone"), buyerEmail: formValue(formData, "buyerEmail"), instagramUrl: formValue(formData, "instagramUrl"), seats: formData.get("seats") || "1", comment: formValue(formData, "comment") }));
   complete("/infobusiness/sales", "sale");
 }
 
 export async function updateInfoSaleAction(formData: FormData) {
   const user = await requireUser(); const id = required(formData, "id");
-  await updateInfoSale(user.id, id, infoSaleSchema.parse({ productId: formData.get("productId"), amount: formData.get("amount"), operationDate: formData.get("operationDate"), buyer: formValue(formData, "buyer"), seats: formData.get("seats") || "1", comment: formValue(formData, "comment") }));
+  await updateInfoSale(user.id, id, infoSaleSchema.parse({ productId: formData.get("productId"), amount: formData.get("amount"), operationDate: formData.get("operationDate"), buyer: formValue(formData, "buyer"), buyerPhone: formValue(formData, "buyerPhone"), buyerEmail: formValue(formData, "buyerEmail"), instagramUrl: formValue(formData, "instagramUrl"), seats: formData.get("seats") || "1", comment: formValue(formData, "comment") }));
   complete("/infobusiness/sales", "saleUpdated");
 }
 

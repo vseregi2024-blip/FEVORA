@@ -32,6 +32,9 @@ export const infoSaleSchema = z.object({
   amount: money,
   operationDate: date,
   buyer: z.string().trim().max(120).nullable(),
+  buyerPhone: z.string().trim().max(40).nullable(),
+  buyerEmail: z.string().trim().email().max(160).nullable(),
+  instagramUrl: z.string().trim().max(300).nullable(),
   seats: z.coerce.number().int().positive(),
   comment: optional,
 });
@@ -54,6 +57,15 @@ export const formValue = (formData: FormData, name: string) => {
   const value = formData.get(name);
   return typeof value === "string" && value.trim() ? value.trim() : null;
 };
+
+export function normalizeInstagramUrl(value: string | null) {
+  if (!value) return null;
+  const normalized = value.startsWith("@") ? `https://www.instagram.com/${value.slice(1)}` : value.startsWith("instagram.com/") || value.startsWith("www.instagram.com/") ? `https://${value}` : value;
+  let url: URL;
+  try { url = new URL(normalized); } catch { throw new Error("Укажите корректную ссылку Instagram."); }
+  if (!/(^|\.)instagram\.com$/i.test(url.hostname) || !url.pathname.replaceAll("/", "")) throw new Error("Укажите ссылку на профиль Instagram.");
+  return url.toString();
+}
 
 async function ensureInfoExpenseCategories(userId: string) {
   const count = await prisma.infoExpenseCategory.count({ where: { userId } });
@@ -107,9 +119,10 @@ export async function updateInfoExpenseCategory(userId: string, id: string, inpu
 
 export async function createInfoSale(userId: string, input: z.infer<typeof infoSaleSchema>) {
   const product = await ownedProduct(userId, input.productId, true);
+  const instagramUrl = normalizeInstagramUrl(input.instagramUrl);
   return prisma.$transaction(async (db) => {
     const income = await db.transaction.create({ data: { userId, type: TransactionType.INCOME, amount: decimal(input.amount), operationDate: dateFromInput(input.operationDate), module: FinanceModule.INFOBUSINESS, description: input.comment ? `${product.name}: ${input.comment}` : `Продажа: ${product.name}`, source: "WEB" } });
-    return db.infoSale.create({ data: { userId, productId: product.id, buyer: input.buyer, seats: input.seats, comment: input.comment, incomeTransactionId: income.id } });
+    return db.infoSale.create({ data: { userId, productId: product.id, buyer: input.buyer, buyerPhone: input.buyerPhone, buyerEmail: input.buyerEmail, instagramUrl, seats: input.seats, comment: input.comment, incomeTransactionId: income.id } });
   });
 }
 
@@ -117,9 +130,10 @@ export async function updateInfoSale(userId: string, id: string, input: z.infer<
   const sale = await prisma.infoSale.findFirst({ where: { id, userId, deletedAt: null } });
   if (!sale) throw new Error("Продажа не найдена.");
   const product = await ownedProduct(userId, input.productId, sale.productId !== input.productId);
+  const instagramUrl = normalizeInstagramUrl(input.instagramUrl);
   return prisma.$transaction(async (db) => {
     await db.transaction.updateMany({ where: { id: sale.incomeTransactionId, userId, deletedAt: null }, data: { amount: decimal(input.amount), operationDate: dateFromInput(input.operationDate), description: input.comment ? `${product.name}: ${input.comment}` : `Продажа: ${product.name}` } });
-    return db.infoSale.update({ where: { id }, data: { productId: product.id, buyer: input.buyer, seats: input.seats, comment: input.comment } });
+    return db.infoSale.update({ where: { id }, data: { productId: product.id, buyer: input.buyer, buyerPhone: input.buyerPhone, buyerEmail: input.buyerEmail, instagramUrl, seats: input.seats, comment: input.comment } });
   });
 }
 
