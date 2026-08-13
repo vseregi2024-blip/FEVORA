@@ -2,6 +2,8 @@
 
 ## Current stage
 
+Стартовые остатки товарки, их себестоимость и цена продажи по умолчанию реализуются как завершающее уточнение Task №4.
+
 Codex Task №4 — Tovarka is deployed to production. The remaining acceptance step is an authenticated owner UI smoke test.
 
 ## Implemented
@@ -33,6 +35,7 @@ Codex Task №4 — Tovarka is deployed to production. The remaining acceptance 
 - Remaining interactive form labels and operation details use Russian, the current primary interface language.
 - Task №4 Tovarka: products/categories, purchase lots, FIFO sale allocations, stock movements, operational expenses, protected purchase edits/deletions, sale edits/soft deletion, and product-profit reporting.
 - Delivery can be included in a purchase lot cost or recorded as a separately linked operational expense.
+- Product creation supports an opening stock balance with unit cost (a FIFO lot without a duplicate expense) and a default sale price for future sales.
 
 ## Verified
 

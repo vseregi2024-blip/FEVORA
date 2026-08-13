@@ -370,6 +370,7 @@ model Product {
   brand           String?
   unit            ProductUnit                @default(PIECE)
   currentQuantity Int                        @default(0)
+  defaultSalePrice Decimal?                  @db.Decimal(18, 2)
   status          ProductStatus              @default(ACTIVE)
   comment         String?
   purchases       ProductPurchase[]

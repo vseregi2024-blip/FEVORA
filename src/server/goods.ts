@@ -14,7 +14,9 @@ const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const optional = z.string().trim().max(500).nullable();
 const decimal = (value: string) => new Prisma.Decimal(value.replace(",", "."));
 
-export const productSchema = z.object({ name: z.string().trim().min(1).max(120), categoryId: z.string().cuid().nullable(), brand: z.string().trim().max(80).nullable(), unit: z.nativeEnum(ProductUnit), comment: optional });
+export const productSchema = z.object({ name: z.string().trim().min(1).max(120), categoryId: z.string().cuid().nullable(), brand: z.string().trim().max(80).nullable(), unit: z.nativeEnum(ProductUnit), openingQuantity: z.coerce.number().int().nonnegative(), openingUnitCost: money.nullable(), openingDate: date, defaultSalePrice: money.nullable(), comment: optional }).superRefine((value, context) => {
+  if (value.openingQuantity > 0 && !value.openingUnitCost) context.addIssue({ code: z.ZodIssueCode.custom, path: ["openingUnitCost"], message: "Укажите закупочную цену для стартового остатка." });
+});
 export const productCategorySchema = z.object({ name: z.string().trim().min(1).max(80) });
 export const purchaseSchema = z.object({ productId: z.string().cuid(), quantity: positiveInteger, unitPurchasePrice: money, deliveryAmount: money.nullable(), deliveryInCost: z.boolean(), supplier: z.string().trim().max(120).nullable(), operationDate: date, comment: optional });
 export const saleSchema = z.object({ productId: z.string().cuid(), quantity: positiveInteger, unitSalePrice: money, totalAmount: money.nullable(), buyer: z.string().trim().max(120).nullable(), operationDate: date, comment: optional });
@@ -34,7 +36,16 @@ export async function getGoodsExpenseCategories(userId: string) { return prisma.
 
 export async function createProduct(userId: string, input: z.infer<typeof productSchema>) {
   if (input.categoryId && !await prisma.productCategory.findFirst({ where: { id: input.categoryId, OR: [{ userId }, { userId: null }], isArchived: false } })) throw new Error("Категория недоступна.");
-  return prisma.product.create({ data: { userId, ...input } });
+  const { openingQuantity, openingUnitCost, openingDate, defaultSalePrice, ...productInput } = input;
+  return prisma.$transaction(async (db) => {
+    const product = await db.product.create({ data: { userId, ...productInput, currentQuantity: openingQuantity, defaultSalePrice: defaultSalePrice ? decimal(defaultSalePrice) : null } });
+    if (openingQuantity > 0 && openingUnitCost) {
+      const receivedDate = dateFromInput(openingDate);
+      const movement = await db.productInventoryMovement.create({ data: { userId, productId: product.id, type: "ADJUSTMENT", quantity: openingQuantity, operationDate: receivedDate, comment: "Стартовый остаток" } });
+      await db.productInventoryLot.create({ data: { userId, productId: product.id, adjustmentMovementId: movement.id, initialQuantity: openingQuantity, availableQuantity: openingQuantity, unitCost: decimal(openingUnitCost), receivedDate, comment: "Стартовый остаток" } });
+    }
+    return product;
+  });
 }
 
 export async function createProductCategory(userId: string, input: z.infer<typeof productCategorySchema>) {
