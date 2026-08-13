@@ -36,6 +36,7 @@ Codex Task №5 — модуль «Инфобизнес» задеплоен в 
 - Product creation supports an opening stock balance with unit cost (a FIFO lot without a duplicate expense) and a default sale price for future sales.
 - Task №5 InfoBusiness: products/courses with online, offline and hybrid formats, free-form product types, base price, status, dates and comments.
 - InfoBusiness sales create one linked Income transaction atomically; editing updates the same Income and soft delete excludes both records from analytics.
+- InfoBusiness sale records include optional student name, phone, email and an Instagram profile link that opens from sale history.
 - InfoBusiness expenses create one linked Expense transaction atomically and support either a concrete product or an explicitly selected general expense.
 - General InfoBusiness expenses are included only in the project-wide result and never reduce a product’s profit automatically.
 - User-owned expense categories are initialized with the required starters and can be created, renamed and safely archived without breaking history.
