@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Codex Task №5 — модуль «Инфобизнес» реализован локально и ожидает применения migration, production deploy и owner smoke test.
+Codex Task №5 — модуль «Инфобизнес» задеплоен в production. Остался только authenticated owner smoke test из ТЗ; он не выполнялся без доступа к учётной записи и без создания тестовых данных вслепую.
 
 ## Implemented
 
@@ -61,6 +61,8 @@ Codex Task №5 — модуль «Инфобизнес» реализован �
 - Task №4 local validation: `lint`, `typecheck`, production `build`, and 38 automated tests pass.
 - Task №5 baseline validation before changes: `lint`, `typecheck`, production `build`, and 38 automated tests pass after Prisma Client generation.
 - Task №5 final local validation: `lint`, `typecheck`, production `build`, and 58 automated tests pass.
+- Task №5 additive migration `20260813130000_add_infobusiness` applied during successful Railway deployment `2947cca9-c909-44e4-86ac-bcb33c91b8d8` on 13 August 2026; public `/api/health` returned `200` with `{"status":"ok"}`.
+- Task №5 implementation commit: `1423cf8 feat: add infobusiness module`.
 
 ## Not implemented
 
@@ -69,4 +71,4 @@ Codex Task №5 — модуль «Инфобизнес» реализован �
 
 ## Next step
 
-Apply `20260813130000_add_infobusiness`, deploy the Task №5 build, and run the owner production smoke flow from the Task №5 specification. Confirm that Family, Poultry and Tovarka records remain visible before and after a restart. The provided workspace is an exported source tree without `.git`, so commit hash and GitHub synchronization must be completed from a Git worktree.
+Sign in as the owner and run the Task №5 production smoke flow from the specification, including product, sales, product/general expenses, custom category, edit and soft delete. Confirm that Family, Poultry and Tovarka records remain visible before and after a restart. No production test records were created automatically.
