@@ -34,7 +34,17 @@ const categories = [
   ["Електрика / утримання", FinanceModule.POULTRY, CategoryKind.EXPENSE],
   ["Проче", FinanceModule.POULTRY, CategoryKind.EXPENSE],
   ["Продаж продукції", FinanceModule.POULTRY, CategoryKind.INCOME],
+  ["Продажа товара", FinanceModule.GOODS, CategoryKind.INCOME],
+  ["Закупка товара", FinanceModule.GOODS, CategoryKind.EXPENSE],
+  ["Реклама", FinanceModule.GOODS, CategoryKind.EXPENSE],
+  ["Доставка", FinanceModule.GOODS, CategoryKind.EXPENSE],
+  ["Упаковка", FinanceModule.GOODS, CategoryKind.EXPENSE],
+  ["Комиссия", FinanceModule.GOODS, CategoryKind.EXPENSE],
+  ["Транспорт", FinanceModule.GOODS, CategoryKind.EXPENSE],
+  ["Прочее", FinanceModule.GOODS, CategoryKind.EXPENSE],
 ];
+
+const productCategories = ["Herbalife", "Косметические средства", "Другое"];
 
 const archivedFamilyCategories = ["Здоров'я", "Транспорт", "Розваги", "Подорожі", "Обов'язкові платежі", "Інше"];
 const archivedPoultryCategories = ["Корм", "Птахи", "Обладнання", "Ветеринарія"];
@@ -56,6 +66,12 @@ async function main() {
     data: { isArchived: true },
   });
   await prisma.category.updateMany({ where: { userId: null, module: FinanceModule.POULTRY, name: { in: archivedPoultryCategories } }, data: { isArchived: true } });
+
+  for (const [sortOrder, name] of productCategories.entries()) {
+    const existing = await prisma.productCategory.findFirst({ where: { userId: null, name } });
+    if (existing) await prisma.productCategory.update({ where: { id: existing.id }, data: { sortOrder, isArchived: false } });
+    else await prisma.productCategory.create({ data: { name, sortOrder } });
+  }
 }
 
 main().finally(() => prisma.$disconnect());

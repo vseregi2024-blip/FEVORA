@@ -19,6 +19,27 @@ enum FinanceModule {
   GENERAL
   FAMILY
   POULTRY
+  GOODS
+}
+
+enum ProductUnit {
+  PIECE
+  PACKAGE
+  JAR
+  BOTTLE
+  OTHER
+}
+
+enum ProductStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum ProductInventoryMovementType {
+  PURCHASE
+  SALE
+  WRITE_OFF
+  ADJUSTMENT
 }
 
 enum TransactionSource {
@@ -93,22 +114,29 @@ model User {
   feedLots                   FeedLot[]
   poultrySales               PoultrySale[]
   poultryOperationalExpenses PoultryOperationalExpense[]
+  productCategories          ProductCategory[]
+  products                   Product[]
+  productPurchases           ProductPurchase[]
+  productSales               ProductSale[]
+  productInventoryLots       ProductInventoryLot[]
+  productInventoryMovements  ProductInventoryMovement[]
+  goodsOperationalExpenses   GoodsOperationalExpense[]
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
 }
 
 model Category {
-  id                String                      @id @default(cuid())
+  id                String             @id @default(cuid())
   userId            String?
-  user              User?                       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  module            FinanceModule               @default(GENERAL)
+  user              User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  module            FinanceModule      @default(GENERAL)
   name              String
   icon              String?
-  kind              CategoryKind                @default(BOTH)
-  sortOrder         Int                         @default(0)
-  isArchived        Boolean                     @default(false)
-  createdAt         DateTime                    @default(now())
-  updatedAt         DateTime                    @updatedAt
+  kind              CategoryKind       @default(BOTH)
+  sortOrder         Int                @default(0)
+  isArchived        Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   transactions      Transaction[]
   recurringPayments RecurringPayment[]
 
@@ -137,6 +165,9 @@ model Transaction {
   poultrySale        PoultrySale?               @relation("SaleIncome")
   feedLot            FeedLot?                   @relation("FeedPurchaseExpense")
   operationalExpense PoultryOperationalExpense?
+  productPurchase    ProductPurchase?           @relation("ProductPurchaseExpense")
+  productSale        ProductSale?               @relation("ProductSaleIncome")
+  goodsExpense       GoodsOperationalExpense?
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime                   @updatedAt
   deletedAt          DateTime?
@@ -312,6 +343,171 @@ model PoultryOperationalExpense {
   batchId       String?
   batch         PoultryBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
   createdAt     DateTime      @default(now())
+}
+
+model ProductCategory {
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  sortOrder  Int       @default(0)
+  isArchived Boolean   @default(false)
+  products   Product[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@unique([userId, name])
+  @@index([isArchived, sortOrder])
+}
+
+model Product {
+  id              String                     @id @default(cuid())
+  userId          String
+  user            User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  categoryId      String?
+  category        ProductCategory?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brand           String?
+  unit            ProductUnit                @default(PIECE)
+  currentQuantity Int                        @default(0)
+  status          ProductStatus              @default(ACTIVE)
+  comment         String?
+  purchases       ProductPurchase[]
+  sales           ProductSale[]
+  inventoryLots   ProductInventoryLot[]
+  movements       ProductInventoryMovement[]
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
+  deletedAt       DateTime?
+
+  @@unique([userId, name])
+  @@index([userId, status, deletedAt])
+}
+
+model ProductPurchase {
+  id                   String                    @id @default(cuid())
+  userId               String
+  user                 User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId            String
+  product              Product                   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity             Int
+  unitPurchasePrice    Decimal                   @db.Decimal(18, 2)
+  deliveryAmount       Decimal                   @default(0) @db.Decimal(18, 2)
+  deliveryInCost       Boolean                   @default(false)
+  totalAmount          Decimal                   @db.Decimal(18, 2)
+  supplier             String?
+  operationDate        DateTime                  @db.Date
+  comment              String?
+  expenseTransactionId String                    @unique
+  expenseTransaction   Transaction               @relation("ProductPurchaseExpense", fields: [expenseTransactionId], references: [id], onDelete: Cascade)
+  deliveryExpense      GoodsOperationalExpense?  @relation("PurchaseDeliveryExpense")
+  inventoryLot         ProductInventoryLot?
+  inventoryMovement    ProductInventoryMovement? @relation("PurchaseMovement")
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+  deletedAt            DateTime?
+
+  @@index([userId, productId, operationDate, deletedAt])
+}
+
+model ProductInventoryLot {
+  id                   String                       @id @default(cuid())
+  userId               String
+  user                 User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId            String
+  product              Product                      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  purchaseId           String?                      @unique
+  purchase             ProductPurchase?             @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  adjustmentMovementId String?                      @unique
+  adjustmentMovement   ProductInventoryMovement?    @relation("AdjustmentLot", fields: [adjustmentMovementId], references: [id], onDelete: Cascade)
+  initialQuantity      Int
+  availableQuantity    Int
+  unitCost             Decimal                      @db.Decimal(18, 2)
+  receivedDate         DateTime                     @db.Date
+  comment              String?
+  allocations          ProductInventoryAllocation[]
+  createdAt            DateTime                     @default(now())
+  updatedAt            DateTime                     @updatedAt
+  deletedAt            DateTime?
+
+  @@index([userId, productId, receivedDate, deletedAt])
+}
+
+model ProductSale {
+  id                  String                       @id @default(cuid())
+  userId              String
+  user                User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId           String
+  product             Product                      @relation(fields: [productId], references: [id], onDelete: Restrict)
+  quantity            Int
+  unitSalePrice       Decimal                      @db.Decimal(18, 2)
+  totalAmount         Decimal                      @db.Decimal(18, 2)
+  costOfGoods         Decimal                      @db.Decimal(18, 2)
+  profitAmount        Decimal                      @db.Decimal(18, 2)
+  buyer               String?
+  operationDate       DateTime                     @db.Date
+  comment             String?
+  incomeTransactionId String                       @unique
+  incomeTransaction   Transaction                  @relation("ProductSaleIncome", fields: [incomeTransactionId], references: [id], onDelete: Cascade)
+  inventoryMovement   ProductInventoryMovement?    @relation("SaleMovement")
+  allocations         ProductInventoryAllocation[]
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+  deletedAt           DateTime?
+
+  @@index([userId, productId, operationDate, deletedAt])
+}
+
+model ProductInventoryMovement {
+  id            String                       @id @default(cuid())
+  userId        String
+  user          User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product                      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type          ProductInventoryMovementType
+  quantity      Int
+  operationDate DateTime                     @db.Date
+  comment       String?
+  purchaseId    String?                      @unique
+  purchase      ProductPurchase?             @relation("PurchaseMovement", fields: [purchaseId], references: [id], onDelete: Cascade)
+  saleId        String?                      @unique
+  sale          ProductSale?                 @relation("SaleMovement", fields: [saleId], references: [id], onDelete: Cascade)
+  adjustmentLot ProductInventoryLot?         @relation("AdjustmentLot")
+  allocations   ProductInventoryAllocation[]
+  createdAt     DateTime                     @default(now())
+  deletedAt     DateTime?
+
+  @@index([userId, productId, operationDate, deletedAt])
+}
+
+model ProductInventoryAllocation {
+  id         String                   @id @default(cuid())
+  lotId      String
+  lot        ProductInventoryLot      @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  movementId String
+  movement   ProductInventoryMovement @relation(fields: [movementId], references: [id], onDelete: Cascade)
+  saleId     String?
+  sale       ProductSale?             @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  quantity   Int
+  unitCost   Decimal                  @db.Decimal(18, 2)
+  totalCost  Decimal                  @db.Decimal(18, 2)
+  createdAt  DateTime                 @default(now())
+  deletedAt  DateTime?
+
+  @@index([lotId, deletedAt])
+  @@index([movementId, deletedAt])
+  @@index([saleId, deletedAt])
+}
+
+model GoodsOperationalExpense {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  purchaseId    String?     @unique
+  purchase      ProductPurchase? @relation("PurchaseDeliveryExpense", fields: [purchaseId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
 }
 
 model Receipt {

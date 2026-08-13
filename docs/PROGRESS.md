@@ -2,7 +2,7 @@
 
 ## Current stage
 
-Codex Task №3.1 — unified mobile-first interface implementation is deployed to production. The final authenticated visual smoke check requires the owner session.
+Codex Task №4 — Tovarka implementation is ready for the production migration and smoke test.
 
 ## Implemented
 
@@ -31,6 +31,8 @@ Codex Task №3.1 — unified mobile-first interface implementation is deployed 
 - Deletion uses one reusable confirmation dialog for financial operations and Poultry sales.
 - Shared loading and user-friendly error states are available for protected application routes.
 - Remaining interactive form labels and operation details use Russian, the current primary interface language.
+- Task №4 Tovarka: products/categories, purchase lots, FIFO sale allocations, stock movements, operational expenses, protected purchase edits/deletions, sale edits/soft deletion, and product-profit reporting.
+- Delivery can be included in a purchase lot cost or recorded as a separately linked operational expense.
 
 ## Verified
 
@@ -50,9 +52,8 @@ Codex Task №3.1 — unified mobile-first interface implementation is deployed 
 ## Not implemented
 
 - Voice recognition and photo receipt upload remain future UI surfaces without external APIs.
-- Cosmetology, goods, and infobusiness remain inactive future projects.
-- Task №4 has not been started.
+- Cosmetology and infobusiness remain inactive future projects.
 
 ## Next step
 
-Sign in to production and verify the refreshed Poultry batch and incubation detail pages on a phone-width screen; this requires the owner session. Do not start Task №4 automatically.
+Apply the additive Task №4 migration, deploy, and perform the controlled Tovarka production smoke test while confirming existing Family and Poultry data remains unchanged.

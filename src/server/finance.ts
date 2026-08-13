@@ -48,6 +48,7 @@ function decimalAmount(amount: string, type: TransactionType) {
 }
 
 export async function createTransaction(userId: string, input: TransactionInput) {
+  if (input.module === FinanceModule.GOODS) throw new Error("Операции Товарки создаются только в разделе «Товарка», чтобы не нарушить склад и FIFO.");
   await assertCategoryOwner(userId, input.categoryId, input.module);
   return prisma.transaction.create({
     data: {
@@ -64,8 +65,10 @@ export async function createTransaction(userId: string, input: TransactionInput)
 }
 
 export async function updateTransaction(userId: string, id: string, input: TransactionInput) {
-  const existing = await prisma.transaction.findFirst({ where: { id, userId, deletedAt: null } });
+  const existing = await prisma.transaction.findFirst({ where: { id, userId, deletedAt: null }, include: { productPurchase: true, productSale: true, goodsExpense: true } });
   if (!existing) throw new Error("Операцію не знайдено.");
+  if (existing.module === FinanceModule.GOODS || existing.productPurchase || existing.productSale || existing.goodsExpense) throw new Error("Эту операцию нужно изменять в разделе «Товарка», чтобы склад и FIFO остались корректными.");
+  if (input.module === FinanceModule.GOODS) throw new Error("Операции Товарки создаются только в разделе «Товарка».");
   await assertCategoryOwner(userId, input.categoryId, input.module);
   return prisma.transaction.update({
     where: { id },
@@ -81,8 +84,9 @@ export async function updateTransaction(userId: string, id: string, input: Trans
 }
 
 export async function softDeleteTransaction(userId: string, id: string) {
-  const existing = await prisma.transaction.findFirst({ where: { id, userId, deletedAt: null } });
+  const existing = await prisma.transaction.findFirst({ where: { id, userId, deletedAt: null }, include: { productPurchase: true, productSale: true, goodsExpense: true } });
   if (!existing) throw new Error("Операцію не знайдено.");
+  if (existing.module === FinanceModule.GOODS || existing.productPurchase || existing.productSale || existing.goodsExpense) throw new Error("Эту операцию нужно удалять в разделе «Товарка», чтобы склад и FIFO остались корректными.");
   return prisma.transaction.update({ where: { id }, data: { deletedAt: new Date() } });
 }
 
