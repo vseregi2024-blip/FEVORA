@@ -748,6 +748,7 @@ model CosmetologyProcedureTemplate {
   comment      String?
   materials    CosmetologyProcedureMaterialTemplate[]
   visits       CosmetologyVisit[]
+  visitServices CosmetologyVisitService[]
   createdAt    DateTime                      @default(now())
   updatedAt    DateTime                      @updatedAt
   deletedAt    DateTime?
@@ -845,6 +846,7 @@ model CosmetologyVisit {
   client            CosmetologyClient                @relation(fields: [clientId], references: [id], onDelete: Restrict)
   procedureTemplateId String?
   procedureTemplate CosmetologyProcedureTemplate?    @relation(fields: [procedureTemplateId], references: [id], onDelete: SetNull)
+  services          CosmetologyVisitService[]
   procedureName     String
   status            CosmetologyVisitStatus        @default(SCHEDULED)
   scheduledTime     String?
@@ -867,6 +869,22 @@ model CosmetologyVisit {
 
   @@index([userId, status, operationDate, deletedAt])
   @@index([userId, clientId, operationDate, deletedAt])
+}
+
+model CosmetologyVisitService {
+  id              String                        @id @default(cuid())
+  visitId         String
+  visit           CosmetologyVisit              @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  templateId      String?
+  template        CosmetologyProcedureTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  name            String
+  price           Decimal                       @default(0) @db.Decimal(18, 2)
+  durationMinutes Int?
+  sortOrder       Int                           @default(0)
+  createdAt       DateTime                      @default(now())
+  updatedAt       DateTime                      @updatedAt
+
+  @@index([visitId, sortOrder])
 }
 
 model CosmetologyWalletMovement {
