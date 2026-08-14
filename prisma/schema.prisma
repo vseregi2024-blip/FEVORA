@@ -66,6 +66,12 @@ enum CosmetologyPlanStatus {
   CANCELLED
 }
 
+enum CosmetologyVisitStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
 enum ProductUnit {
   PIECE
   PACKAGE
@@ -668,6 +674,7 @@ model CosmetologyClient {
   user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   lastName          String
   firstName         String
+  displayName       String?
   phone             String
   phoneLastFour     String
   birthDate         DateTime?                @db.Date
@@ -813,19 +820,22 @@ model CosmetologyVisit {
   procedureTemplateId String?
   procedureTemplate CosmetologyProcedureTemplate?    @relation(fields: [procedureTemplateId], references: [id], onDelete: SetNull)
   procedureName     String
+  status            CosmetologyVisitStatus        @default(SCHEDULED)
+  scheduledTime     String?
   operationDate     DateTime                         @db.Date
   paymentAmount     Decimal                          @db.Decimal(18, 2)
   costAmount        Decimal                          @default(0) @db.Decimal(18, 2)
   profitAmount      Decimal                          @default(0) @db.Decimal(18, 2)
   comment           String?
-  incomeTransactionId String                         @unique
-  incomeTransaction Transaction                      @relation("CosmetologyVisitIncome", fields: [incomeTransactionId], references: [id], onDelete: Cascade)
+  incomeTransactionId String?                        @unique
+  incomeTransaction Transaction?                     @relation("CosmetologyVisitIncome", fields: [incomeTransactionId], references: [id], onDelete: Cascade)
   usages            CosmetologyProcedureMaterialUsage[]
   movements         CosmetologyInventoryMovement[]
   createdAt         DateTime                         @default(now())
   updatedAt         DateTime                         @updatedAt
   deletedAt         DateTime?
 
+  @@index([userId, status, operationDate, deletedAt])
   @@index([userId, clientId, operationDate, deletedAt])
 }
 
