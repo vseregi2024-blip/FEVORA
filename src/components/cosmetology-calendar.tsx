@@ -67,7 +67,7 @@ function CalendarEvent({ item }: { item: CalendarAppointment }) {
   return <Link href={`/cosmetology/visits/${item.id}`} className={`${styles.event} ${item.status !== "SCHEDULED" ? styles.completed : ""}`} style={appointmentStyle(item)} title={`${item.clientName}: ${item.procedureName}`}><b>{item.scheduledTime ?? "Без времени"}</b><span>{item.clientName}</span><small>{item.procedureName}</small></Link>;
 }
 
-export function CosmetologyCalendar({ appointments }: { appointments: CalendarAppointment[] }) {
+export function CosmetologyCalendar({ appointments, onNewAppointment }: { appointments: CalendarAppointment[]; onNewAppointment: () => void }) {
   const [view, setView] = useState<CalendarView>("week");
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [listStatus, setListStatus] = useState<ListStatus>("SCHEDULED");
@@ -89,7 +89,7 @@ export function CosmetologyCalendar({ appointments }: { appointments: CalendarAp
   return <section className="app-card">
     <div className={styles.header}>
       <div><p className="eyebrow">Календарь</p><h2>{view === "day" ? dayFormatter.format(selectedDate) : view === "week" ? `${dateFormatter.format(weekStart)} — ${dateFormatter.format(weekDays[6])}` : "Все записи"}</h2></div>
-      <a className="button primary" href="#new-appointment">＋ Новая запись</a>
+      <button type="button" className="button primary" onClick={onNewAppointment}>＋ Новая запись</button>
     </div>
     <div className={styles.controls}>
       <div className={styles.viewSwitch} aria-label="Вид календаря"><button type="button" className={view === "day" ? styles.active : ""} onClick={() => setView("day")}>День</button><button type="button" className={view === "week" ? styles.active : ""} onClick={() => setView("week")}>Неделя</button><button type="button" className={view === "list" ? styles.active : ""} onClick={() => setView("list")}>Список</button></div>
