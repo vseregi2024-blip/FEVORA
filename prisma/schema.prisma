@@ -70,6 +70,25 @@ enum CosmetologyVisitStatus {
   SCHEDULED
   COMPLETED
   CANCELLED
+  NO_SHOW
+}
+
+enum CosmetologyWallet {
+  CASH
+  MONO
+  PRIVAT
+  PROCUREMENT
+}
+
+enum CosmetologyWalletMovementType {
+  PREPAYMENT
+  SETTLEMENT
+  DEBT_PAYMENT
+  REFUND
+  PURCHASE
+  EXPENSE
+  TRANSFER_IN
+  TRANSFER_OUT
 }
 
 enum ProductUnit {
@@ -196,6 +215,7 @@ model User {
   cosmetologyVisits          CosmetologyVisit[]
   cosmetologyExpenseCategories CosmetologyExpenseCategory[]
   cosmetologyExpenses        CosmetologyExpense[]
+  cosmetologyWalletMovements CosmetologyWalletMovement[]
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
 }
@@ -248,6 +268,7 @@ model Transaction {
   cosmetologyVisit   CosmetologyVisit?           @relation("CosmetologyVisitIncome")
   cosmetologyLot     CosmetologyInventoryLot?    @relation("CosmetologyLotExpense")
   cosmetologyExpense CosmetologyExpense?         @relation("CosmetologyExpenseTransaction")
+  cosmetologyWalletMovement CosmetologyWalletMovement? @relation("CosmetologyWalletMovementTransaction")
   createdAt          DateTime                   @default(now())
   updatedAt          DateTime                   @updatedAt
   deletedAt          DateTime?
@@ -681,6 +702,9 @@ model CosmetologyClient {
   contactMethod     CosmetologyContactMethod @default(PHONE)
   contactValue      String?
   source            String?
+  referrerId        String?
+  referrer          CosmetologyClient?           @relation("CosmetologyClientReferrals", fields: [referrerId], references: [id], onDelete: SetNull)
+  referrals         CosmetologyClient[]           @relation("CosmetologyClientReferrals")
   status            CosmetologyClientStatus  @default(NEW)
   specialMarks      String[]                 @default([])
   notes             String?
@@ -753,6 +777,7 @@ model CosmetologyInventoryItem {
   brand        String?
   unit         CosmetologyUnit                @default(UNIT)
   currentQuantity Decimal                     @default(0) @db.Decimal(18, 3)
+  minimumQuantity Decimal                     @default(0) @db.Decimal(18, 3)
   comment      String?
   lots         CosmetologyInventoryLot[]
   movements    CosmetologyInventoryMovement[]
@@ -779,6 +804,7 @@ model CosmetologyInventoryLot {
   purchaseDate   DateTime                       @db.Date
   expiryDate     DateTime?                      @db.Date
   batchNumber    String?
+  supplier       String?
   comment        String?
   expenseTransactionId String?                  @unique
   expenseTransaction Transaction?               @relation("CosmetologyLotExpense", fields: [expenseTransactionId], references: [id], onDelete: Cascade)
@@ -822,8 +848,11 @@ model CosmetologyVisit {
   procedureName     String
   status            CosmetologyVisitStatus        @default(SCHEDULED)
   scheduledTime     String?
+  durationMinutes   Int?
   operationDate     DateTime                         @db.Date
+  plannedAmount     Decimal?                         @db.Decimal(18, 2)
   paymentAmount     Decimal                          @db.Decimal(18, 2)
+  paidAmount        Decimal                          @default(0) @db.Decimal(18, 2)
   costAmount        Decimal                          @default(0) @db.Decimal(18, 2)
   profitAmount      Decimal                          @default(0) @db.Decimal(18, 2)
   comment           String?
@@ -831,12 +860,33 @@ model CosmetologyVisit {
   incomeTransaction Transaction?                     @relation("CosmetologyVisitIncome", fields: [incomeTransactionId], references: [id], onDelete: Cascade)
   usages            CosmetologyProcedureMaterialUsage[]
   movements         CosmetologyInventoryMovement[]
+  walletMovements   CosmetologyWalletMovement[]
   createdAt         DateTime                         @default(now())
   updatedAt         DateTime                         @updatedAt
   deletedAt         DateTime?
 
   @@index([userId, status, operationDate, deletedAt])
   @@index([userId, clientId, operationDate, deletedAt])
+}
+
+model CosmetologyWalletMovement {
+  id            String                         @id @default(cuid())
+  userId        String
+  user          User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet        CosmetologyWallet
+  type          CosmetologyWalletMovementType
+  amount        Decimal                        @db.Decimal(18, 2)
+  operationDate DateTime                       @db.Date
+  description   String?
+  visitId       String?
+  visit         CosmetologyVisit?              @relation(fields: [visitId], references: [id], onDelete: SetNull)
+  transactionId String?                        @unique
+  transaction   Transaction?                   @relation("CosmetologyWalletMovementTransaction", fields: [transactionId], references: [id], onDelete: SetNull)
+  createdAt     DateTime                       @default(now())
+  deletedAt     DateTime?
+
+  @@index([userId, wallet, operationDate, deletedAt])
+  @@index([userId, visitId])
 }
 
 model CosmetologyProcedureMaterialUsage {
