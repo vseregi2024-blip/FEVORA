@@ -7,42 +7,40 @@ import { SectionHeader } from "@/components/ui/section-header";
 import { formatMoney } from "@/lib/money";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth";
-import { poultryAgeDays } from "@/features/poultry/calculations";
-import { dateFromInput, todayInputValue } from "@/lib/dates";
+import { getPoultryDashboard } from "@/server/poultry";
 
-const movementLabels = { ADD: "Добавлено", SALE: "Продажа", MORTALITY: "Падёж", FAMILY_USE: "Для семьи", TRANSFER: "Перевод", ADJUSTMENT: "Корректировка" } as const;
+const labels = { ADD: "Поступление", SALE: "Продажа", MORTALITY: "Падёж", FAMILY_USE: "Забой / для семьи", TRANSFER: "Перевод", ADJUSTMENT: "Сверка" } as const;
 
 export default async function PoultryBatchPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requireUser();
-  const { id } = await params;
-  const batch = await prisma.poultryBatch.findFirst({
-    where: { id, userId: user.id, deletedAt: null },
-    include: {
-      movements: { where: { deletedAt: null }, orderBy: { operationDate: "desc" } },
-      feedUsages: { include: { lot: { include: { product: true } } }, orderBy: { operationDate: "desc" } },
-      sales: { where: { deletedAt: null }, orderBy: { operationDate: "desc" } },
-      poultryOperationalExpenses: { include: { transaction: true }, orderBy: { createdAt: "desc" } },
-    },
-  });
-  if (!batch) notFound();
-
-  const feedCost = batch.feedUsages.reduce((total, usage) => total + Number(usage.lot.costPerBag) * usage.bags, 0);
-  const salesIncome = batch.sales.reduce((total, sale) => total + Number(sale.totalAmount), 0);
-  const operationCost = batch.poultryOperationalExpenses.reduce((total, expense) => total + Number(expense.transaction.amount), 0);
-  const totalCost = feedCost + operationCost;
+  const user = await requireUser(); const { id } = await params;
+  const [dashboard, details] = await Promise.all([getPoultryDashboard(user.id, "ALL"), prisma.poultryBatch.findFirst({ where: { id, userId: user.id, deletedAt: null }, include: { movements: { where: { deletedAt: null }, orderBy: { operationDate: "desc" } }, originMovements: { where: { deletedAt: null }, include: { origin: true } }, eggCollections: { where: { deletedAt: null }, orderBy: { operationDate: "desc" } }, slaughters: { where: { deletedAt: null }, orderBy: { operationDate: "desc" } }, poultryOperationalExpenses: { where: { deletedAt: null, transaction: { deletedAt: null } }, include: { transaction: true } } } })]);
+  const batch = dashboard.batches.find((item) => item.id === id); if (!batch || !details) notFound();
+  const movementTotal = (type: keyof typeof labels) => details.movements.filter((item) => item.type === type).reduce((sum,item)=>sum+item.quantity,0);
+  const income = batch.sales.reduce((sum,item)=>sum+Number(item.totalAmount),0);
+  const originNames = [...new Map(details.originMovements.map((item)=>[item.origin.id, item.origin])).values()];
+  const events = [...details.movements.map((item)=>({ id:item.id,date:item.operationDate,title:labels[item.type],detail:`${item.quantityDelta && item.quantityDelta > 0 ? "+" : "−"}${item.quantity} гол.${item.reason ? ` · ${item.reason}` : ""}`})), ...details.eggCollections.map((item)=>({id:item.id,date:item.operationDate,title:"Яйца",detail:`+${item.quantity}`}))].sort((a,b)=>b.date.getTime()-a.date.getTime());
+  const returnTo = `/poultry/flock/${batch.id}`;
+  const context = `batchId=${batch.id}&returnTo=${encodeURIComponent(returnTo)}`;
 
   return <>
-    <header className="page-header"><div><p className="eyebrow">Птицеводство · Партия</p><h1>{batch.name}</h1><p className="muted">{batch.birdType}{batch.breed ? ` · ${batch.breed}` : ""}</p></div><Link href="/poultry/flock" className="button secondary">К партиям</Link></header>
-    <section className="metric-grid"><article><span>Сейчас</span><strong>{batch.currentQuantity} гол.</strong></article><article><span>Возраст</span><strong>{poultryAgeDays(batch.startDate, dateFromInput(todayInputValue()))} дн.</strong></article><article><span>Старт</span><strong>{batch.startingQuantity} гол.</strong></article><article><span>Статус</span><StatusBadge tone={batch.status === "ACTIVE" ? "success" : "neutral"}>{batch.status === "ACTIVE" ? "Активна" : "Завершена"}</StatusBadge></article></section>
-    <SectionHeader eyebrow="Карточка партии" title="Основное" />
-    <AppCard><dl className="settings"><div><dt>Дата начала</dt><dd>{batch.startDate.toLocaleDateString("ru-RU")}</dd></div><div><dt>Источник</dt><dd>{batch.source === "PURCHASE" ? "Покупка" : batch.source === "INCUBATION" ? "Инкубация" : "Другое"}</dd></div>{batch.comment && <div><dt>Комментарий</dt><dd>{batch.comment}</dd></div>}</dl></AppCard>
-    <SectionHeader eyebrow="Финансы" title="По этой партии" />
-    <section className="metric-grid"><article><span>Корм</span><strong className="expense">{formatMoney(feedCost.toString())}</strong></article><article><span>Расходы</span><strong className="expense">{formatMoney(operationCost.toString())}</strong></article><article><span>Продажи</span><strong className="income">{formatMoney(salesIncome.toString())}</strong></article><article><span>Результат</span><strong>{formatMoney((salesIncome - totalCost).toString())}</strong></article></section>
-    <SectionHeader eyebrow="Поголовье" title="Движения" />
-    {batch.movements.length ? <div className="transaction-list">{batch.movements.map((movement) => <article className="transaction-row" key={movement.id}><span><b>{movementLabels[movement.type]}</b><small>{movement.operationDate.toLocaleDateString("ru-RU")}{movement.comment ? ` · ${movement.comment}` : ""}</small></span><strong>{movement.type === "ADD" ? "+" : "−"}{movement.quantity} гол.</strong></article>)}</div> : <EmptyState title="Движений пока нет" description="Здесь появятся продажи, падёж, перевод или другое изменение партии." />}
-    <SectionHeader eyebrow="Корма" title="Выдано партии" />
-    {batch.feedUsages.length ? <div className="transaction-list">{batch.feedUsages.map((usage) => <article className="transaction-row" key={usage.id}><span><b>{usage.lot.product.name}</b><small>{usage.operationDate.toLocaleDateString("ru-RU")}{usage.comment ? ` · ${usage.comment}` : ""}</small></span><strong>{usage.bags} меш.</strong></article>)}</div> : <EmptyState title="Корм ещё не назначен" description="Назначьте мешок в разделе «Корма и склад»." />}
-    <SectionHeader eyebrow="Продажи" title="Доход от партии" action={<Link href={`/poultry/sales?batchId=${batch.id}`} className="button primary">Продать птицу</Link>} />
-    {batch.sales.length ? <div className="transaction-list">{batch.sales.map((sale) => <Link className="transaction-row" href={`/poultry/sales/${sale.id}`} key={sale.id}><span><b>{sale.itemName}</b><small>{sale.operationDate.toLocaleDateString("ru-RU")}{sale.buyer ? ` · ${sale.buyer}` : ""}</small></span><strong className="income">+{formatMoney(sale.totalAmount.toString())}</strong></Link>)}</div> : <EmptyState title="Продаж пока нет" description="Нажмите «Продать птицу»: FEVORA создаст связанный доход и уменьшит только эту партию." />}
+    <header className="page-header"><div><p className="eyebrow">Паспорт птицы</p><h1>{batch.name}</h1><p className="muted">{batch.birdType} · происхождение {batch.startDate.toLocaleDateString("ru-RU")}</p></div><Link href="/poultry/flock" className="button secondary">К группам</Link></header>
+    <section className="metric-grid poultry-summary"><article><span>Сейчас</span><strong>{batch.currentQuantity} гол.</strong></article><article><span>Возраст</span><strong>{batch.ageDays} дн.</strong></article><article><span>Было изначально</span><strong>{batch.startingQuantity}</strong></article><article><span>Статус</span><StatusBadge tone={batch.status === "ACTIVE" ? "success" : "neutral"}>{batch.status === "ACTIVE" ? "Активна" : "Завершена"}</StatusBadge></article></section>
+    <div className="poultry-compact-stats"><span>Продано <b>{movementTotal("SALE")}</b></span><span>Падёж <b>{movementTotal("MORTALITY")}</b></span><span>Переведено <b>{movementTotal("TRANSFER")}</b></span><span>Забой <b>{movementTotal("FAMILY_USE")}</b></span></div>
+    <details className="app-card poultry-batch-action-menu"><summary><b>＋ Действие с группой</b><span>Открыть</span></summary><div className="poultry-sheet-grid"><Link href={`/poultry/eggs?${context}#collect`}>Яйца</Link><Link href={`/poultry/feed?${context}#assign-feed`}>Кормление</Link><Link href={`/poultry/flock?${context}#movement`}>Падёж / изменение</Link><Link href={`/poultry/flock?${context}#transfer`}>Перевод</Link><Link href={`/poultry/flock?${context}#slaughter`}>Забой</Link><Link href={`/poultry/flock?${context}#reconcile`}>Сверка</Link><Link href={`/poultry/sales?${context}`}>Продажа</Link><Link href={`/poultry/expenses?${context}#new`}>Расход</Link></div></details>
+
+    <SectionHeader eyebrow="Состав" title="Породы и происхождение" />
+    <section className="family-grid"><AppCard><div className="mini-list">{batch.breeds.map((item)=><div key={item.id}><span>{item.name}</span><b>{item.quantity}</b></div>)}</div></AppCard><AppCard><h2>Источники птицы</h2>{originNames.map((origin)=><p className="muted" key={origin.id}>{origin.originDate.toLocaleDateString("ru-RU")} · {origin.type === "PURCHASE" ? "покупка" : origin.type === "INCUBATION" ? "инкубация" : origin.type === "GIFT" ? "подарок" : "другое"}</p>)}</AppCard></section>
+
+    <SectionHeader eyebrow="Кормление" title="Нормы и использование" />
+    <section className="family-grid"><AppCard><h2>Текущие нормы</h2>{batch.feedRates.length ? batch.feedRates.slice(0,5).map((rate)=><p key={rate.id}><b>{rate.product.name}</b><br/><small>{rate.dailyQuantity.toString()} {rate.unit === "KG" ? "кг" : rate.unit === "BAG" ? "меш." : rate.product.householdUnitName ?? "быт. ед."}/день · с {rate.effectiveFrom.toLocaleDateString("ru-RU")}</small></p>) : <p className="muted">Норма не задана.</p>}<Link href="/poultry/feed#feeding" className="text-link">Настроить →</Link></AppCard><AppCard><h2>Использование</h2><p>Фактически выдано: <b>{batch.productionCost.manualFeedCost.toFixed(2)} ₴</b></p><p>По нормам: <b>≈{batch.productionCost.estimatedFeedCost.toFixed(2)} ₴</b></p></AppCard></section>
+
+    <SectionHeader eyebrow="Себестоимость" title="Накопленная производственная стоимость" />
+    <section className="metric-grid poultry-summary"><article><span>Начальная / переводы</span><strong>{formatMoney(batch.productionCost.baseCost.toFixed(2))}</strong></article><article><span>Корм</span><strong>{formatMoney(batch.productionCost.feedCost.toFixed(2))}</strong></article><article><span>Расходы группы</span><strong>{formatMoney(batch.productionCost.directExpenses.toFixed(2))}</strong></article><article><span>Всего / голова</span><strong>{formatMoney(batch.productionCost.total.toFixed(2))}<small>{batch.currentQuantity ? ` ≈ ${formatMoney((batch.productionCost.total/batch.currentQuantity).toFixed(2))}/гол.` : ""}</small></strong></article></section>
+
+    <SectionHeader eyebrow="Результат" title="Что дала группа" />
+    <section className="metric-grid poultry-summary"><article><span>Доход</span><strong className="income">{formatMoney(income.toFixed(2))}</strong></article><article><span>Собрано яиц</span><strong>{details.eggCollections.reduce((sum,item)=>sum+item.quantity,0)}</strong></article><article><span>Для семьи</span><strong>{details.slaughters.filter((item)=>item.purpose === "FAMILY").reduce((sum,item)=>sum+item.quantity,0)}</strong></article><article><span>Продано птицы</span><strong>{movementTotal("SALE")}</strong></article></section>
+
+    <SectionHeader eyebrow="История" title="Хронология" />
+    {events.length ? <div className="transaction-list">{events.map((event)=><article className="transaction-row" key={`${event.title}-${event.id}`}><span><b>{event.title}</b><small>{event.date.toLocaleDateString("ru-RU")}</small></span><strong>{event.detail}</strong></article>)}</div> : <EmptyState title="Событий пока нет" description="История появится после первого действия." />}
   </>;
 }
