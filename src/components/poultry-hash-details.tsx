@@ -11,7 +11,8 @@ export function PoultryHashDetails() {
     const openTarget = () => {
       const id = decodeURIComponent(window.location.hash.slice(1));
       const target = id ? document.getElementById(id) : null;
-      if (target instanceof HTMLDetailsElement) target.open = true;
+      const details = target instanceof HTMLDetailsElement ? target : target?.closest("details");
+      if (details instanceof HTMLDetailsElement) details.open = true;
     };
     openTarget();
     window.addEventListener("hashchange", openTarget);

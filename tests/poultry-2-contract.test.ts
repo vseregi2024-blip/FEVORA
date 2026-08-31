@@ -9,6 +9,9 @@ const actions = readFileSync("src/app/(private)/poultry/actions.ts", "utf8");
 const routeNavigation = readFileSync("src/components/poultry-route-navigation.tsx", "utf8");
 const mobileNavigation = readFileSync("src/components/mobile-bottom-navigation.tsx", "utf8");
 const poultryCss = readFileSync("src/app/family.css", "utf8");
+const compactPoultryCss = readFileSync("src/app/poultry-compact.css", "utf8");
+const feedPage = readFileSync("src/app/(private)/poultry/feed/page.tsx", "utf8");
+const feedStockPage = readFileSync("src/app/(private)/poultry/feed/stock/page.tsx", "utf8");
 
 describe("Poultry 2.0 integrity contracts", () => {
   it("uses an upper report date bound", () => expect(server).toContain("operationDate: { gte: from, lte: to }"));
@@ -21,11 +24,13 @@ describe("Poultry 2.0 integrity contracts", () => {
   it("egg sales are typed independently", () => expect(schema).toContain("EGGS"));
   it("equipment is excluded from automatic group cost", () => expect(server).toContain("notIn: [\"Оборудование\", \"Обладнання і матеріали\"]"));
   it("feed usage creates no financial transaction", () => { const body = server.slice(server.indexOf("export async function createFeedUsage"), server.indexOf("export async function createFeedRate")); expect(body).not.toContain("db.transaction.create"); });
-  it("provides Back, Poultry overview, and FEVORA Projects routes", () => { expect(routeNavigation).toContain("← Назад"); expect(routeNavigation).toContain("Poultry · Обзор"); expect(routeNavigation).toContain("← FEVORA · Проекты"); });
+  it("shows one Back control only on deeply nested pages", () => { expect(routeNavigation).toContain("← Назад"); expect(routeNavigation).toContain("if (!nested) return null"); expect(routeNavigation).not.toContain("Poultry · Обзор"); });
   it("makes contextual Back deterministic through returnTo", () => { expect(routeNavigation).toContain('searchParams.get("returnTo")'); expect(routeNavigation).toContain("<Link href={returnTo}"); });
   it("redirects successful forms through a validated Poultry return path", () => { expect(actions).toContain('formValue(formData, "returnTo")'); expect(actions).toContain('requested?.startsWith("/poultry")'); expect(actions).toContain("target.searchParams.set(key, \"1\")"); });
   it("returns global quick actions to the Poultry overview", () => expect(mobileNavigation).toContain("returnTo=%2Fpoultry"));
   it("shows a cancel action beside Poultry form submissions", () => expect(readFileSync("src/components/poultry-form-actions.tsx", "utf8")).toContain("Отмена / Назад"));
-  it("keeps explicit responsive rules for 375, 390, and 430 px", () => { expect(poultryCss).toContain("max-width: 375px"); expect(poultryCss).toContain("max-width: 390px"); expect(poultryCss).toContain("max-width: 430px"); });
-  it("opens the form targeted by contextual hash navigation", () => expect(readFileSync("src/components/poultry-hash-details.tsx", "utf8")).toContain("target.open = true"));
+  it("keeps explicit responsive rules for 375, 390, and 430 px", () => { for (const width of [375, 390, 430]) expect(`${poultryCss}\n${compactPoultryCss}`).toContain(`max-width: ${width}px`); });
+  it("opens the form or its parent targeted by contextual hash navigation", () => expect(readFileSync("src/components/poultry-hash-details.tsx", "utf8")).toContain("details.open = true"));
+  it("keeps feed forms closed until a user chooses an action", () => { expect(feedPage).toContain('<details id="buy-feed"'); expect(feedPage).toContain('<details id="assign-feed"'); expect(feedPage).toContain('<details id="feed-reconcile"'); });
+  it("provides a separate compact feed stock table", () => { expect(feedStockPage).toContain("Склад кормов"); expect(feedStockPage).toContain("mobile-table"); expect(feedStockPage).toContain("Все"); expect(feedStockPage).toContain("Добавки"); });
 });

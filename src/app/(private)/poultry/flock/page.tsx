@@ -9,7 +9,7 @@ import { requireUser } from "@/server/auth";
 import { getPoultryDashboard } from "@/server/poultry";
 import { createPoultryBatchAction, createPoultryMovementAction, createPoultryTransferAction, createSlaughterAction, reconcileFlockAction } from "../actions";
 
-export default async function FlockPage({ searchParams }: { searchParams: Promise<{ batchId?: string; returnTo?: string }> }) {
+export default async function FlockPage({ searchParams }: { searchParams: Promise<{ batchId?: string; returnTo?: string; type?: string }> }) {
   const user = await requireUser();
   const { batches } = await getPoultryDashboard(user.id);
   const active = batches.filter((batch) => batch.status === "ACTIVE");
@@ -18,13 +18,15 @@ export default async function FlockPage({ searchParams }: { searchParams: Promis
   const query = await searchParams;
   const selectedBatchId = active.some((batch) => batch.id === query.batchId) ? query.batchId ?? "" : "";
   const returnTo = query.returnTo?.startsWith("/poultry") && !query.returnTo.startsWith("//") ? query.returnTo : "/poultry/flock";
+  const filters = [["all", "Все"], ["chicken", "Куры"], ["broiler", "Бройлеры"], ["duck", "Утки"], ["muscovy", "Индоутки"]] as const;
+  const selectedType = filters.some(([value]) => value === query.type) ? query.type ?? "all" : "all";
+  const visibleBatches = batches.filter((batch) => selectedType === "all" || (selectedType === "broiler" ? /бройлер/i.test(`${batch.birdType} ${batch.name}`) : selectedType === "muscovy" ? /индо/i.test(`${batch.birdType} ${batch.name}`) : selectedType === "duck" ? /ут(к|ят)/i.test(`${batch.birdType} ${batch.name}`) && !/индо/i.test(`${batch.birdType} ${batch.name}`) : /кур|несуш/i.test(`${batch.birdType} ${batch.name}`) && !/бройлер/i.test(`${batch.birdType} ${batch.name}`)));
 
   return <>
-    <header className="page-header"><div><p className="eyebrow">Птицеводство</p><h1>Птица</h1><p className="muted">Группы содержания, происхождение и все изменения поголовья.</p></div><Link href="/poultry" className="button secondary">Обзор</Link></header>
-    <section className="balance-card"><p>Поголовье сейчас</p><strong>{currentQuantity} гол.</strong><span>{active.length} активн. групп</span></section>
+    <header className="page-header compact-page-header"><div><p className="eyebrow">Птицеводство</p><h1>Птица</h1><p className="muted">{currentQuantity} голов · {active.length} активных групп</p></div><Link href="/poultry/flock?returnTo=%2Fpoultry%2Fflock#new-batch" className="button primary">＋ Птица</Link></header>
+    <nav className="chip-tabs" aria-label="Фильтр групп">{filters.map(([value, label]) => <Link key={value} href={value === "all" ? "/poultry/flock" : `/poultry/flock?type=${value}`} className={selectedType === value ? "active" : ""}>{label}</Link>)}</nav>
 
-    <SectionHeader eyebrow="Группы" title="Что есть сейчас" />
-    {batches.length ? <section className="project-grid">{batches.map((batch) => <Link className="project-card active" href={`/poultry/flock/${batch.id}`} key={batch.id}><div className="card-title"><h3>{batch.name}</h3><StatusBadge tone={batch.status === "ACTIVE" ? "success" : "neutral"}>{batch.status === "ACTIVE" ? "Активна" : "Завершена"}</StatusBadge></div><span>{batch.birdType}{batch.breeds.length ? ` · ${batch.breeds.map((item) => item.name).join(", ")}` : ""}</span><strong>{batch.currentQuantity} гол.</strong><small>Возраст: {batch.ageDays} дн. · ≈ {batch.currentQuantity ? (batch.productionCost.total / batch.currentQuantity).toFixed(2) : "0.00"} ₴/гол.</small><em>Открыть паспорт →</em></Link>)}</section> : <EmptyState title="Пока нет групп птицы" description="Добавьте купленную, подаренную или другую птицу." />}
+    {visibleBatches.length ? <section className="compact-list flock-list">{visibleBatches.map((batch) => <Link className="compact-list-row" href={`/poultry/flock/${batch.id}`} key={batch.id}><span><b>{batch.name}</b><small>{batch.birdType}{batch.breeds.length ? ` · ${batch.breeds.map((item) => item.name).join(", ")}` : ""}</small><small>{batch.currentQuantity} голов · {batch.ageDays} дней</small></span><StatusBadge tone={batch.status === "ACTIVE" ? "success" : "neutral"}>{batch.status === "ACTIVE" ? "Активна" : "Завершена"}</StatusBadge></Link>)}</section> : <EmptyState title="Групп не найдено" description="Выберите другой фильтр или добавьте птицу." />}
 
     <SectionHeader eyebrow="Быстро" title="Изменить поголовье" />
     <section className="poultry-action-panels">
@@ -37,7 +39,8 @@ export default async function FlockPage({ searchParams }: { searchParams: Promis
       <details id="reconcile" className="app-card"><summary><b>Сверить поголовье</b><span>＋</span></summary><form action={reconcileFlockAction} className="compact-form"><input type="hidden" name="returnTo" value={returnTo}/><label>Группа<select name="batchId" required defaultValue={selectedBatchId}><option value="" disabled>Выберите группу</option>{active.map((batch) => <option value={batch.id} key={batch.id}>{batch.name} · FEVORA {batch.currentQuantity}</option>)}</select></label><div className="form-grid"><label>Фактически голов<input name="actualQuantity" required inputMode="numeric" /></label><label>Дата<input name="operationDate" type="date" required defaultValue={today} /></label></div><label>Комментарий<input name="comment" /></label><PoultryFormActions cancelHref={returnTo}><button className="button secondary">Создать корректировку</button></PoultryFormActions></form></details>
     </section>
 
-    <SectionHeader eyebrow="Поступление" title="Добавить или купить птицу" />
+    <details id="new-batch" className="action-drawer"><summary><b>Добавить или купить птицу</b><span>＋</span></summary>
     <article id="new-batch" className="app-card"><form action={createPoultryBatchAction} className="compact-form"><input type="hidden" name="returnTo" value={returnTo}/><label>Название группы<input name="name" required placeholder="Утки · август" /></label><div className="form-grid"><label>Вид птицы<input name="birdType" required placeholder="Утки" /></label><label>Способ поступления<select name="source"><option value="PURCHASE">Покупка</option><option value="GIFT">Подарок / бесплатно</option><option value="OTHER">Другое</option></select></label></div><div className="form-grid"><label>Дата появления / покупки<input name="startDate" type="date" required defaultValue={today} /></label><label>Количество<input name="quantity" required inputMode="numeric" /></label></div><details className="form-details"><summary>Возраст и породы — необязательно</summary><label>Возраст при покупке, дней<input name="ageAtAcquisitionDays" inputMode="numeric" /></label>{[0,1,2,3].map((index) => <div className="form-grid" key={index}><label>Порода<input name={`breed-${index}`} placeholder={index ? "Ещё порода" : "Неизвестно"} /></label><label>Голов<input name={`breedQuantity-${index}`} inputMode="numeric" /></label></div>)}</details><div className="form-grid"><label>Оплачено, ₴<input name="cashCost" inputMode="decimal" placeholder="Для покупки" /></label><label>Расчётная стоимость, ₴<input name="productionValue" inputMode="decimal" placeholder="Для подаренной птицы" /></label></div><p className="summary-note">Оплата создаст один реальный расход. Расчётная стоимость подарка увеличит только себестоимость.</p><label>Комментарий<input name="comment" /></label><PoultryFormActions cancelHref={returnTo}><button className="button primary">Создать группу</button></PoultryFormActions></form></article>
+    </details>
   </>;
 }

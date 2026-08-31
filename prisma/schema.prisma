@@ -386,6 +386,7 @@ model FeedProduct {
   bagSizeKg         Decimal?                  @db.Decimal(10, 2)
   householdUnitName String?
   householdUnitKg   Decimal?                  @db.Decimal(10, 3)
+  minimumStockKg    Decimal                   @default(25) @db.Decimal(14, 3)
   lots              FeedLot[]
   rates             FeedRate[]
   adjustments       FeedInventoryAdjustment[]
@@ -412,6 +413,8 @@ model FeedLot {
   availableKg           Decimal?    @db.Decimal(14, 3)
   costPerKg             Decimal?    @db.Decimal(18, 4)
   purchaseDate          DateTime    @db.Date
+  deliveryAmount       Decimal     @default(0) @db.Decimal(18, 2)
+  supplier             String?
   comment               String?
   usages                FeedUsage[]
   createdAt             DateTime    @default(now())
@@ -425,8 +428,8 @@ model FeedUsage {
   id            String        @id @default(cuid())
   lotId         String
   lot           FeedLot       @relation(fields: [lotId], references: [id], onDelete: Cascade)
-  batchId       String
-  batch         PoultryBatch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  batchId       String?
+  batch         PoultryBatch? @relation(fields: [batchId], references: [id], onDelete: SetNull)
   bags          Int
   unit          FeedUnit      @default(BAG)
   quantity      Decimal?      @db.Decimal(14, 3)
