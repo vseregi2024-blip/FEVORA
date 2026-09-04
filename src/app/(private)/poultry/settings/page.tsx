@@ -3,6 +3,7 @@ import Link from "next/link";
 const settings = [
   ["/poultry/settings/categories", "💸", "Категории расходов", "Названия, иконки и порядок"],
   ["/poultry/settings/breeds", "🐔", "Породы", "Справочник пород птицы"],
+  ["/poultry/settings/feed-products", "🌾", "Виды кормов", "Добавление, название и удаление"],
   ["/poultry/settings/feed-units", "🥣", "Единицы корма", "Мешки и бытовые меры"],
   ["/poultry/settings/feed-rates", "🌾", "Нормы кормления", "Нормы по группам и датам"],
 ] as const;

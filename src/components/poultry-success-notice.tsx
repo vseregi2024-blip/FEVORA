@@ -11,6 +11,7 @@ const messages: Record<string, string> = {
   collected: "Сбор яиц сохранён.", expense: "Расход сохранён.",
   categorySaved: "Категория сохранена.", categoryDeleted: "Категория удалена.",
   breedSaved: "Порода сохранена.", unitsSaved: "Единицы корма сохранены.",
+  feedProductSaved: "Вид корма сохранён.", feedProductDeleted: "Вид корма удалён.",
 };
 
 export function PoultrySuccessNotice() {

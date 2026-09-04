@@ -31,6 +31,7 @@ export const feedUsageSchema = z.object({ lotId: z.string().cuid(), batchId: z.s
 export const feedRateSchema = z.object({ batchId: z.string().cuid(), productId: z.string().cuid(), unit: z.nativeEnum(FeedUnit), dailyQuantity: money, effectiveFrom: date, comment: z.string().trim().max(500).nullable() });
 export const feedAdjustmentSchema = z.object({ productId: z.string().cuid(), actualKg: money, operationDate: date, comment: z.string().trim().max(500).nullable() });
 export const feedProductSettingsSchema = z.object({ productId: z.string().cuid(), type: z.string().trim().max(80).nullable(), minimumStockKg: money });
+export const feedProductCatalogSchema = z.object({ id: z.string().cuid().optional(), name: z.string().trim().min(1).max(120), type: z.string().trim().max(80).nullable().optional() });
 export const feedUnitSettingsSchema = z.object({ productId: z.string().cuid(), bagSizeKg: money.nullable(), householdUnitName: z.string().trim().max(40).nullable(), householdUnitKg: money.nullable() });
 export const poultryCategorySettingsSchema = z.object({ id: z.string().cuid().optional(), name: z.string().trim().min(1).max(80), icon: z.string().trim().max(12).nullable().optional() });
 export const poultryBreedSettingsSchema = z.object({ id: z.string().cuid().optional(), name: z.string().trim().min(1).max(80) });
@@ -94,8 +95,14 @@ export async function createFeedAdjustment(userId: string, input: z.infer<typeof
 export async function updateFeedProductSettings(userId: string, input: z.infer<typeof feedProductSettingsSchema>) { const product = await prisma.feedProduct.findFirst({ where: { id: input.productId, userId } }); if (!product) throw new Error("Корм не знайдено."); return prisma.feedProduct.update({ where: { id: product.id }, data: { type: input.type, minimumStockKg: decimal(input.minimumStockKg) } }); }
 export async function updateFeedUnitSettings(userId: string, input: z.infer<typeof feedUnitSettingsSchema>) { const product = await prisma.feedProduct.findFirst({ where: { id: input.productId, userId } }); if (!product) throw new Error("Корм не найден"); return prisma.feedProduct.update({ where: { id: product.id }, data: { bagSizeKg: input.bagSizeKg ? decimal(input.bagSizeKg) : null, householdUnitName: input.householdUnitName, householdUnitKg: input.householdUnitKg ? decimal(input.householdUnitKg) : null } }); }
 
+export async function getFeedProducts(userId: string) { return prisma.feedProduct.findMany({ where: { userId }, include: { _count: { select: { lots: true, rates: true, adjustments: true } } }, orderBy: { name: "asc" } }); }
+async function assertUniqueFeedProduct(userId: string, name: string, exceptId?: string) { const products = await prisma.feedProduct.findMany({ where: { userId, ...(exceptId ? { id: { not: exceptId } } : {}) }, select: { name: true } }); if (products.some((item) => canonicalName(item.name) === canonicalName(name))) throw new Error("Такой вид корма уже существует"); }
+export async function createFeedProduct(userId: string, input: z.infer<typeof feedProductCatalogSchema>) { const name = normalizedName(input.name); await assertUniqueFeedProduct(userId, name); return prisma.feedProduct.create({ data: { userId, name, type: input.type, minimumStockKg: decimal(0) } }); }
+export async function updateFeedProductCatalog(userId: string, input: z.infer<typeof feedProductCatalogSchema>) { if (!input.id) throw new Error("Корм не найден"); const product = await prisma.feedProduct.findFirst({ where: { id: input.id, userId } }); if (!product) throw new Error("Корм не найден"); const name = normalizedName(input.name); await assertUniqueFeedProduct(userId, name, product.id); return prisma.feedProduct.update({ where: { id: product.id }, data: { name, type: input.type } }); }
+export async function deleteUnusedFeedProduct(userId: string, id: string) { const product = await prisma.feedProduct.findFirst({ where: { id, userId }, include: { _count: { select: { lots: true, rates: true, adjustments: true } } } }); if (!product) throw new Error("Корм не найден"); if (product._count.lots || product._count.rates || product._count.adjustments) throw new Error("Этот корм используется в истории и не может быть удалён"); return prisma.feedProduct.delete({ where: { id } }); }
+
 export async function getFeedWorkspace(userId: string) {
-  const dashboard = await getPoultryDashboard(userId);
+  const [dashboard, products] = await Promise.all([getPoultryDashboard(userId), prisma.feedProduct.findMany({ where: { userId }, orderBy: { name: "asc" } })]);
   const [usages, adjustments, rates] = await Promise.all([
     prisma.feedUsage.findMany({ where: { deletedAt: null, lot: { userId, deletedAt: null } }, include: { lot: { include: { product: true } }, batch: true }, orderBy: { operationDate: "desc" } }),
     prisma.feedInventoryAdjustment.findMany({ where: { userId, deletedAt: null }, include: { product: true }, orderBy: { operationDate: "desc" } }),
@@ -104,12 +111,15 @@ export async function getFeedWorkspace(userId: string) {
   const latestRates = new Map<string, number>();
   for (const rate of rates) { const key = `${rate.batchId}:${rate.productId}`; if (!latestRates.has(key)) latestRates.set(key, numberValue(rate.dailyKg)); }
   const dailyKg = [...latestRates.values()].reduce((sum, value) => sum + value, 0);
+  const includedProductIds = new Set(dashboard.inventory.map((item) => item.product.id));
+  const emptyInventory = await Promise.all(products.filter((product) => !includedProductIds.has(product.id)).map(async (product) => ({ product, ...(await calculatedProductStockKg(userId, product.id, dashboard.to)), averageCostPerKg: await averageFeedCostPerKg(userId, product.id) })));
+  const inventory = [...dashboard.inventory, ...emptyInventory];
   const operations = [
     ...dashboard.lots.map((lot) => ({ id: `purchase:${lot.id}`, kind: "PURCHASE" as const, date: lot.purchaseDate, productId: lot.productId, productName: lot.product.name, quantityKg: numberValue(lot.purchasedKg), detail: lot.supplier || "Покупка" })),
     ...usages.map((usage) => ({ id: `usage:${usage.id}`, kind: "USAGE" as const, date: usage.operationDate, productId: usage.lot.productId, productName: usage.lot.product.name, quantityKg: -numberValue(usage.quantityKg), detail: usage.batch?.name || (usage.purpose === "FATTENING" ? "Птица на откорм" : usage.purpose === "LAYERS" ? "Несушки" : "Общее использование") })),
     ...adjustments.map((item) => ({ id: `adjustment:${item.id}`, kind: "ADJUSTMENT" as const, date: item.operationDate, productId: item.productId, productName: item.product.name, quantityKg: numberValue(item.quantityDeltaKg), detail: item.comment || "Инвентаризация" })),
   ].sort((a, b) => b.date.getTime() - a.date.getTime());
-  return { ...dashboard, operations, dailyKg };
+  return { ...dashboard, inventory, operations, dailyKg };
 }
 
 export async function createIncubationBatch(userId: string, input: z.infer<typeof incubationSchema>) { const cashCost = input.eggSource === "PURCHASED" ? decimal(input.cashCost ?? "0") : decimal(0); const productionCost = input.eggSource === "PURCHASED" ? cashCost : decimal(input.productionCost ?? "0"); const category = cashCost.gt(0) ? await categoryByName(userId, ["Инкубационные яйца", "Інкубаційні яйця"], "EXPENSE") : null; return prisma.$transaction(async (db) => { const transaction = category ? await db.transaction.create({ data: { userId, type: "EXPENSE", amount: cashCost, operationDate: dateFromInput(input.setDate), module: "POULTRY", categoryId: category.id, description: `Инкубационные яйца: ${input.name}`, source: "WEB" } }) : null; return db.incubationBatch.create({ data: { userId, name: input.name, birdType: input.birdType, setDate: dateFromInput(input.setDate), eggSource: input.eggSource, cashCost, productionCost, expenseTransactionId: transaction?.id, comment: input.comment, items: { create: input.items } }, include: { items: true } }); }); }
