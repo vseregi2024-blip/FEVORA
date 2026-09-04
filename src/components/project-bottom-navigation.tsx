@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 
 import { AppIcon, type AppIconName } from "@/components/ui/icons";
@@ -42,11 +43,11 @@ const projectNavigations: ProjectNavigation[] = [
     prefix: "/poultry",
     label: "Навигация птицеводства",
     links: [
-      { href: "/poultry", label: "Главная", icon: "home" },
+      { href: "/poultry", label: "Обзор", icon: "home" },
       { href: "/poultry/flock", label: "Птица", icon: "flock" },
       { href: "/poultry/sales", label: "Добавить", icon: "add", isAdd: true },
-      { href: "/poultry/feed", label: "Корма", icon: "feed" },
-      { href: "/reports?project=poultry", label: "Финансы", icon: "reports" },
+      { href: "/poultry/feed", label: "Корм", icon: "feed" },
+      { href: "/poultry/analytics", label: "Аналитика", icon: "analytics" },
     ],
   },
   {
@@ -94,9 +95,23 @@ export function ProjectBottomNavigation() {
   const pathname = usePathname();
   const projectNavigation = projectNavigations.find(({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   const navigation = projectNavigation ?? { label: "Основная навигация", links: commonLinks };
+  const inPoultry = pathname === "/poultry" || pathname.startsWith("/poultry/");
+  const [poultryMenuOpen, setPoultryMenuOpen] = useState(false);
+  const poultryActions: NavigationLink[] = [
+    { href: "/poultry/eggs?returnTo=%2Fpoultry#collect", label: "Яйца", icon: "incubation" },
+    { href: "/poultry/feed?returnTo=%2Fpoultry#assign-feed", label: "Корм", icon: "feed" },
+    { href: "/poultry/incubation?returnTo=%2Fpoultry#new", label: "Инкубацию", icon: "incubation" },
+    { href: "/poultry/flock?returnTo=%2Fpoultry#new-batch", label: "Птицу", icon: "flock" },
+    { href: "/poultry/flock?returnTo=%2Fpoultry#transfer", label: "Перевод", icon: "operations" },
+    { href: "/poultry/flock?returnTo=%2Fpoultry#movement", label: "Падёж", icon: "expense" },
+    { href: "/poultry/flock?returnTo=%2Fpoultry#slaughter", label: "Забой", icon: "flock" },
+    { href: "/poultry/sales?returnTo=%2Fpoultry#new-sale", label: "Продажу", icon: "sales" },
+    { href: "/poultry/expenses?returnTo=%2Fpoultry#new", label: "Расход", icon: "money" },
+  ];
 
-  return <nav className="bottom-nav" aria-label={navigation.label}>{navigation.links.map((link) => {
+  return <><nav className="bottom-nav" aria-label={navigation.label}>{navigation.links.map((link) => {
     const active = isActive(pathname, link.href, link.isAdd);
+    if (link.isAdd && inPoultry) return <button type="button" key={`${link.href}-${link.label}`} className="nav-add" aria-label="Добавить в Птицеводство" aria-expanded={poultryMenuOpen} onClick={() => setPoultryMenuOpen(true)}><AppIcon name={link.icon}/><span>Добавить</span></button>;
     return <Link href={link.href} key={`${link.href}-${link.label}`} className={link.isAdd ? "nav-add" : ""} style={active ? { color: "var(--sage)" } : undefined}><AppIcon name={link.icon}/><span>{link.label}</span></Link>;
-  })}</nav>;
+  })}</nav>{inPoultry && poultryMenuOpen && <div className="family-sheet-backdrop" onMouseDown={() => setPoultryMenuOpen(false)}><section className="family-action-sheet poultry-action-sheet" role="dialog" aria-modal="true" aria-label="Что добавить" onMouseDown={(event) => event.stopPropagation()}><div className="sheet-handle"/><div className="sheet-heading"><div><p className="eyebrow">Быстрое действие</p><h2>Что добавить?</h2></div><button type="button" className="sheet-close" onClick={() => setPoultryMenuOpen(false)} aria-label="Закрыть">×</button></div><div className="poultry-sheet-grid">{poultryActions.map((action, index) => <Link href={action.href} key={action.href} onClick={() => setPoultryMenuOpen(false)} className={index < 3 ? "primary-sheet-action" : ""}><AppIcon name={action.icon}/><span>{action.label}</span></Link>)}</div></section></div>}</>;
 }

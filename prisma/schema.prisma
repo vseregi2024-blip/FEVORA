@@ -201,6 +201,7 @@ model User {
   cosmetologyExpenseCategories CosmetologyExpenseCategory[]
   cosmetologyExpenses        CosmetologyExpense[]
   cosmetologyWalletMovements CosmetologyWalletMovement[]
+  poultryBreeds             PoultryBreed[]
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
 }
@@ -437,6 +438,7 @@ model FeedUsage {
   costAmount    Decimal?      @db.Decimal(18, 2)
   type          FeedUsageType @default(ASSIGNED)
   operationDate DateTime      @db.Date
+  purpose       String?
   comment       String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -500,6 +502,20 @@ model PoultryBatchBreed {
   deletedAt DateTime?
 
   @@index([batchId, deletedAt])
+}
+
+model PoultryBreed {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  sortOrder  Int      @default(0)
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, isArchived, sortOrder])
 }
 
 model PoultryOrigin {
@@ -605,6 +621,7 @@ model PoultryEggCollection {
   breed         String?
   quantity      Int
   operationDate DateTime      @db.Date
+  collector     String?
   comment       String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
