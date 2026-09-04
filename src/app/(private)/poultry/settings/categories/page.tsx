@@ -6,7 +6,8 @@ const errors: Record<string, string> = { duplicate: "Такая категори
 
 export default async function PoultryCategoriesPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const user = await requireUser();
-  const [categories, query] = await Promise.all([getPoultryCategories(user.id, true), searchParams]);
+  const [allCategories, query] = await Promise.all([getPoultryCategories(user.id, true), searchParams]);
+  const categories = allCategories.filter((category) => category.userId || !category.isArchived);
   return <>
     <header className="page-header compact-page-header"><div><p className="eyebrow">Настройки</p><h1>Категории расходов</h1><p className="muted">Использованные категории сохраняются в истории</p></div></header>
     {query.error && errors[query.error] && <p className="form-error">{errors[query.error]}</p>}
