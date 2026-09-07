@@ -1,74 +1,52 @@
 "use server";
 
+import { SavingsGoalStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/server/auth";
-import { createFamilyOperation, createRecurringPayment, createSavingsGoal, createSavingsMovement, createSplitReceipt, familyOperationSchema, payRecurringPayment, recurringPaymentSchema, savingsGoalSchema, softDeleteFamilyOperation, splitReceiptSchema, updateFamilyOperation } from "@/server/family";
+import { archiveRecurringPayment, categoryMutationSchema, createFamilyAccount, createFamilyCategory, createFamilyOperation, createRecurringPayment, createSavingsGoal, createSavingsMovement, createSplitReceipt, deleteFamilyAccount, deleteFamilyCategory, deleteSavingsMovement, deleteSplitReceipt, familyAccountSchema, familyOperationSchema, moveFamilyAccount, moveFamilyCategory, payRecurringPayment, recurringPaymentSchema, savingsGoalSchema, setFamilyAccountArchived, setFamilyCategoryArchived, setSavingsGoalStatus, softDeleteFamilyOperation, splitReceiptSchema, toggleRecurringPayment, updateFamilyAccount, updateFamilyCategory, updateFamilyOperation, updateRecurringPayment, updateSavingsGoal, updateSavingsMovement, updateSplitReceipt } from "@/server/family";
 
-const refresh = () => ["/dashboard", "/family", "/reports", "/finance"].forEach((path) => revalidatePath(path));
-const required = (formData: FormData, name: string) => { const value = formData.get(name); if (typeof value !== "string") throw new Error("Перевірте форму."); return value; };
+const refresh = () => ["/dashboard", "/family", "/family/operations", "/family/analytics", "/family/savings", "/family/recurring", "/family/settings", "/family/accounts", "/reports", "/finance"].forEach((path) => revalidatePath(path));
+const required = (formData: FormData, name: string) => { const value = formData.get(name); if (typeof value !== "string") throw new Error("Проверьте форму."); return value; };
+const nullable = (formData: FormData, name: string) => { const value = formData.get(name); return typeof value === "string" && value.trim() ? value : null; };
+const receiptInput = (formData: FormData) => {
+  const indexes = [...new Set([...formData.keys()].flatMap((key) => key.match(/^categoryId-(\d+)$/)?.[1] ?? []))];
+  const items = indexes.map((index) => ({ id: nullable(formData, `id-${index}`) ?? undefined, categoryId: formData.get(`categoryId-${index}`), amount: formData.get(`amount-${index}`), description: nullable(formData, `description-${index}`) ?? undefined })).filter((item) => item.categoryId && item.amount);
+  return splitReceiptSchema.parse({ totalAmount: formData.get("totalAmount"), operationDate: formData.get("operationDate"), accountId: nullable(formData, "accountId"), description: formData.get("description"), items });
+};
+const recurringInput = (formData: FormData) => recurringPaymentSchema.parse({ name: formData.get("name"), amount: formData.get("amount"), categoryId: nullable(formData, "categoryId"), accountId: nullable(formData, "accountId"), frequency: formData.get("frequency"), nextDueDate: formData.get("nextDueDate"), endDate: nullable(formData, "endDate"), note: nullable(formData, "note") });
+const goalInput = (formData: FormData) => savingsGoalSchema.parse({ name: formData.get("name"), targetAmount: nullable(formData, "targetAmount"), initialAmount: nullable(formData, "initialAmount"), targetDate: nullable(formData, "targetDate"), note: nullable(formData, "note") });
 
-export async function createFamilyOperationAction(formData: FormData) {
-  const user = await requireUser();
-  const parsed = familyOperationSchema.parse({ type: formData.get("type"), amount: formData.get("amount"), operationDate: formData.get("operationDate"), categoryId: formData.get("categoryId"), description: formData.get("description") });
-  const transaction = await createFamilyOperation(user.id, parsed);
-  refresh();
-  redirect(`/family?created=${transaction.id}`);
-}
+export async function createFamilyOperationAction(formData: FormData) { const user = await requireUser(); const item = await createFamilyOperation(user.id, familyOperationSchema.parse({ type: formData.get("type"), amount: formData.get("amount"), operationDate: formData.get("operationDate"), categoryId: formData.get("categoryId"), accountId: nullable(formData, "accountId"), description: formData.get("description") })); refresh(); redirect(`/family?created=${item.id}`); }
+export async function updateFamilyOperationAction(formData: FormData) { const user = await requireUser(); const id = required(formData, "id"); await updateFamilyOperation(user.id, id, familyOperationSchema.parse({ type: formData.get("type"), amount: formData.get("amount"), operationDate: formData.get("operationDate"), categoryId: formData.get("categoryId"), accountId: nullable(formData, "accountId"), description: formData.get("description") })); refresh(); redirect(`/family/${id}?updated=1`); }
+export async function deleteFamilyOperationAction(formData: FormData) { const user = await requireUser(); await softDeleteFamilyOperation(user.id, required(formData, "id")); refresh(); redirect("/family/operations?deleted=1"); }
 
-export async function updateFamilyOperationAction(formData: FormData) {
-  const user = await requireUser();
-  const id = required(formData, "id");
-  const parsed = familyOperationSchema.parse({ type: formData.get("type"), amount: formData.get("amount"), operationDate: formData.get("operationDate"), categoryId: formData.get("categoryId"), description: formData.get("description") });
-  await updateFamilyOperation(user.id, id, parsed);
-  refresh();
-  redirect(`/family?updated=${id}`);
-}
+export async function createSplitReceiptAction(formData: FormData) { const user = await requireUser(); const result = await createSplitReceipt(user.id, receiptInput(formData)); refresh(); redirect(`/family/receipts/${result.receipt.id}?created=1`); }
+export async function updateSplitReceiptAction(formData: FormData) { const user = await requireUser(); const id = required(formData, "id"); await updateSplitReceipt(user.id, id, receiptInput(formData)); refresh(); redirect(`/family/receipts/${id}?updated=1`); }
+export async function deleteSplitReceiptAction(formData: FormData) { const user = await requireUser(); await deleteSplitReceipt(user.id, required(formData, "id")); refresh(); redirect("/family/operations?deleted=1"); }
 
-export async function deleteFamilyOperationAction(formData: FormData) {
-  const user = await requireUser();
-  await softDeleteFamilyOperation(user.id, required(formData, "id"));
-  refresh();
-  redirect("/family?deleted=1");
-}
+export async function createFamilyCategoryAction(formData: FormData) { const user = await requireUser(); await createFamilyCategory(user.id, categoryMutationSchema.parse({ name: formData.get("name"), icon: nullable(formData, "icon"), kind: formData.get("kind") })); refresh(); redirect("/family/categories?created=1"); }
+export async function updateFamilyCategoryAction(formData: FormData) { const user = await requireUser(); await updateFamilyCategory(user.id, required(formData, "id"), categoryMutationSchema.parse({ name: formData.get("name"), icon: nullable(formData, "icon"), kind: formData.get("kind") })); refresh(); redirect("/family/categories?updated=1"); }
+export async function deleteFamilyCategoryAction(formData: FormData) { const user = await requireUser(); await deleteFamilyCategory(user.id, required(formData, "id")); refresh(); redirect("/family/categories?deleted=1"); }
+export async function archiveFamilyCategoryAction(formData: FormData) { const user = await requireUser(); await setFamilyCategoryArchived(user.id, required(formData, "id"), required(formData, "isArchived") === "true"); refresh(); redirect("/family/categories"); }
+export async function moveFamilyCategoryAction(formData: FormData) { const user = await requireUser(); await moveFamilyCategory(user.id, required(formData, "id"), required(formData, "direction") === "UP" ? "UP" : "DOWN"); refresh(); redirect("/family/categories"); }
 
-export async function createSplitReceiptAction(formData: FormData) {
-  const user = await requireUser();
-  const indexes = [...formData.keys()].flatMap((key) => key.match(/^categoryId-(\d+)$/)?.[1] ?? []);
-  const items = indexes.map((index) => ({ categoryId: formData.get(`categoryId-${index}`), amount: formData.get(`amount-${index}`), description: formData.get(`description-${index}`) })).filter((item) => item.categoryId && item.amount);
-  const parsed = splitReceiptSchema.parse({ operationDate: formData.get("operationDate"), description: formData.get("description"), items });
-  const receipt = await createSplitReceipt(user.id, parsed);
-  refresh();
-  redirect(`/family?receipt=${receipt.receipt.id}`);
-}
+export async function createFamilyAccountAction(formData: FormData) { const user = await requireUser(); await createFamilyAccount(user.id, familyAccountSchema.parse({ name: formData.get("name") })); refresh(); redirect("/family/accounts?created=1"); }
+export async function updateFamilyAccountAction(formData: FormData) { const user = await requireUser(); await updateFamilyAccount(user.id, required(formData, "id"), familyAccountSchema.parse({ name: formData.get("name") })); refresh(); redirect("/family/accounts?updated=1"); }
+export async function deleteFamilyAccountAction(formData: FormData) { const user = await requireUser(); await deleteFamilyAccount(user.id, required(formData, "id")); refresh(); redirect("/family/accounts?deleted=1"); }
+export async function archiveFamilyAccountAction(formData: FormData) { const user = await requireUser(); await setFamilyAccountArchived(user.id, required(formData, "id"), required(formData, "isArchived") === "true"); refresh(); redirect("/family/accounts"); }
+export async function moveFamilyAccountAction(formData: FormData) { const user = await requireUser(); await moveFamilyAccount(user.id, required(formData, "id"), required(formData, "direction") === "UP" ? "UP" : "DOWN"); refresh(); redirect("/family/accounts"); }
 
-export async function createRecurringPaymentAction(formData: FormData) {
-  const user = await requireUser();
-  const parsed = recurringPaymentSchema.parse({ name: formData.get("name"), amount: formData.get("amount"), categoryId: formData.get("categoryId") || null, frequency: formData.get("frequency"), nextDueDate: formData.get("nextDueDate"), note: formData.get("note") || null });
-  await createRecurringPayment(user.id, parsed);
-  refresh();
-  redirect("/family?recurring=1");
-}
+export async function createSavingsGoalAction(formData: FormData) { const user = await requireUser(); const goal = await createSavingsGoal(user.id, goalInput(formData)); refresh(); redirect(`/family/savings/${goal.id}?created=1`); }
+export async function updateSavingsGoalAction(formData: FormData) { const user = await requireUser(); const id = required(formData, "id"); await updateSavingsGoal(user.id, id, goalInput(formData)); refresh(); redirect(`/family/savings/${id}?updated=1`); }
+export async function setSavingsGoalStatusAction(formData: FormData) { const user = await requireUser(); const id = required(formData, "id"); await setSavingsGoalStatus(user.id, id, SavingsGoalStatus[required(formData, "status") as keyof typeof SavingsGoalStatus]); refresh(); redirect("/family/savings"); }
+export async function createSavingsMovementAction(formData: FormData) { const user = await requireUser(); const id = required(formData, "goalId"); await createSavingsMovement(user.id, id, required(formData, "direction") as "SAVING_IN" | "SAVING_OUT", required(formData, "amount"), required(formData, "operationDate"), required(formData, "description")); refresh(); redirect(`/family/savings/${id}?movement=1`); }
+export async function updateSavingsMovementAction(formData: FormData) { const user = await requireUser(); const goalId = required(formData, "goalId"); await updateSavingsMovement(user.id, required(formData, "id"), required(formData, "direction") as "SAVING_IN" | "SAVING_OUT", required(formData, "amount"), required(formData, "operationDate"), required(formData, "description")); refresh(); redirect(`/family/savings/${goalId}?updated=1`); }
+export async function deleteSavingsMovementAction(formData: FormData) { const user = await requireUser(); const goalId = nullable(formData, "goalId"); await deleteSavingsMovement(user.id, required(formData, "id")); refresh(); redirect(goalId ? `/family/savings/${goalId}?deleted=1` : "/family/savings?deleted=1"); }
 
-export async function payRecurringPaymentAction(formData: FormData) {
-  const user = await requireUser();
-  await payRecurringPayment(user.id, required(formData, "id"));
-  refresh();
-  redirect("/family?paid=1");
-}
-
-export async function createSavingsGoalAction(formData: FormData) {
-  const user = await requireUser();
-  const parsed = savingsGoalSchema.parse({ name: formData.get("name"), targetAmount: formData.get("targetAmount") || null, note: formData.get("note") || null });
-  await createSavingsGoal(user.id, parsed);
-  refresh();
-  redirect("/family?savings=1");
-}
-
-export async function createSavingsMovementAction(formData: FormData) {
-  const user = await requireUser();
-  await createSavingsMovement(user.id, required(formData, "goalId"), required(formData, "direction") as "SAVING_IN" | "SAVING_OUT", required(formData, "amount"), required(formData, "operationDate"), required(formData, "description"));
-  refresh();
-  redirect("/family?savingsMovement=1");
-}
+export async function createRecurringPaymentAction(formData: FormData) { const user = await requireUser(); await createRecurringPayment(user.id, recurringInput(formData)); refresh(); redirect("/family/recurring?created=1"); }
+export async function updateRecurringPaymentAction(formData: FormData) { const user = await requireUser(); const id = required(formData, "id"); await updateRecurringPayment(user.id, id, recurringInput(formData)); refresh(); redirect(`/family/recurring/${id}?updated=1`); }
+export async function toggleRecurringPaymentAction(formData: FormData) { const user = await requireUser(); await toggleRecurringPayment(user.id, required(formData, "id"), required(formData, "isActive") === "true"); refresh(); redirect("/family/recurring"); }
+export async function archiveRecurringPaymentAction(formData: FormData) { const user = await requireUser(); await archiveRecurringPayment(user.id, required(formData, "id")); refresh(); redirect("/family/recurring?archived=1"); }
+export async function payRecurringPaymentAction(formData: FormData) { const user = await requireUser(); await payRecurringPayment(user.id, required(formData, "id")); refresh(); redirect("/family?paid=1"); }

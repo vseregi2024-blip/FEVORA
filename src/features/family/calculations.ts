@@ -26,7 +26,7 @@ export function calculateFamilyTotals(records: FamilyRecord[]): FamilyTotals {
   for (const record of records) {
     if (record.deletedAt) continue;
     const amount = amountToMinorUnits(record.amount);
-    const categoryName = record.categoryName ?? "Без категорії";
+    const categoryName = record.categoryName ?? "Без категории";
 
     if (record.type === "INCOME") {
       totals.income += amount;
@@ -66,6 +66,40 @@ export function periodStart(period: "TODAY" | "WEEK" | "MONTH" | "YEAR", date: D
 export function nextRecurringDate(date: Date, frequency: "MONTHLY" | "WEEKLY"): Date {
   const result = new Date(date);
   if (frequency === "WEEKLY") result.setUTCDate(result.getUTCDate() + 7);
-  else result.setUTCMonth(result.getUTCMonth() + 1);
+  else {
+    const originalDay = result.getUTCDate();
+    result.setUTCDate(1);
+    result.setUTCMonth(result.getUTCMonth() + 1);
+    const lastDay = new Date(Date.UTC(result.getUTCFullYear(), result.getUTCMonth() + 1, 0)).getUTCDate();
+    result.setUTCDate(Math.min(originalDay, lastDay));
+  }
   return result;
+}
+
+export function recurringOccurrences(nextDueDate: Date, endDate: Date | null, frequency: "MONTHLY" | "WEEKLY", from: Date, to: Date, asOf = from) {
+  const overdue: Date[] = [];
+  const scheduled: Date[] = [];
+  let due = new Date(nextDueDate);
+  let guard = 0;
+
+  while (due <= to && (!endDate || due <= endDate) && guard < 600) {
+    (due < asOf ? overdue : scheduled).push(new Date(due));
+    due = nextRecurringDate(due, frequency);
+    guard += 1;
+  }
+
+  return { overdue, scheduled };
+}
+
+export function calendarMonthsInRange(from: Date, to: Date, limit = 12) {
+  const months: Date[] = [];
+  const cursor = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), 1, 12));
+  const end = new Date(Date.UTC(to.getUTCFullYear(), to.getUTCMonth(), 1, 12));
+
+  while (cursor <= end) {
+    months.push(new Date(cursor));
+    cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+  }
+
+  return months.slice(-Math.max(1, limit));
 }

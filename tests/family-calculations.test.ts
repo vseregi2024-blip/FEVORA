@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { calculateFamilyTotals, nextRecurringDate, periodStart, sumSplitReceipt } from "../src/features/family/calculations";
+import { calculateFamilyTotals, calendarMonthsInRange, nextRecurringDate, periodStart, recurringOccurrences, sumSplitReceipt } from "../src/features/family/calculations";
 import { minorUnitsToMoney } from "../src/lib/money";
 
 const date = new Date("2026-08-12T12:00:00.000Z");
@@ -62,7 +62,46 @@ describe("Family finance calculations", () => {
     expect(nextRecurringDate(new Date("2026-08-15T12:00:00.000Z"), "MONTHLY").toISOString()).toBe("2026-09-15T12:00:00.000Z");
   });
 
+  it("keeps end-of-month recurring dates inside the next calendar month", () => {
+    expect(nextRecurringDate(new Date("2026-01-31T12:00:00.000Z"), "MONTHLY").toISOString()).toBe("2026-02-28T12:00:00.000Z");
+  });
+
   it("advances a recurring weekly payment by seven days", () => {
     expect(nextRecurringDate(date, "WEEKLY").toISOString()).toBe("2026-08-19T12:00:00.000Z");
+  });
+
+  it("separates overdue and upcoming recurring occurrences", () => {
+    const occurrences = recurringOccurrences(
+      new Date("2026-08-28T12:00:00.000Z"),
+      null,
+      "MONTHLY",
+      new Date("2026-09-01T12:00:00.000Z"),
+      new Date("2026-09-30T12:00:00.000Z"),
+      new Date("2026-09-07T12:00:00.000Z"),
+    );
+    expect(occurrences.overdue.map((item) => item.toISOString())).toEqual([
+      "2026-08-28T12:00:00.000Z",
+    ]);
+    expect(occurrences.scheduled.map((item) => item.toISOString())).toEqual(["2026-09-28T12:00:00.000Z"]);
+  });
+
+  it("marks a payment due earlier this month as overdue", () => {
+    const occurrences = recurringOccurrences(
+      new Date("2026-09-04T12:00:00.000Z"),
+      null,
+      "MONTHLY",
+      new Date("2026-09-01T12:00:00.000Z"),
+      new Date("2026-09-30T12:00:00.000Z"),
+      new Date("2026-09-07T12:00:00.000Z"),
+    );
+    expect(occurrences.overdue.map((item) => item.toISOString())).toEqual(["2026-09-04T12:00:00.000Z"]);
+    expect(occurrences.scheduled).toEqual([]);
+  });
+
+  it("uses calendar-year months instead of a rolling twelve-month window", () => {
+    const months = calendarMonthsInRange(new Date("2026-01-01T12:00:00.000Z"), new Date("2026-09-07T12:00:00.000Z"));
+    expect(months).toHaveLength(9);
+    expect(months[0].toISOString()).toBe("2026-01-01T12:00:00.000Z");
+    expect(months.at(-1)?.toISOString()).toBe("2026-09-01T12:00:00.000Z");
   });
 });

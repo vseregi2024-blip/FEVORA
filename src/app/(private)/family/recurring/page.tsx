@@ -1,0 +1,10 @@
+import Link from "next/link";
+
+import { dateFromInput, todayInputValue } from "@/lib/dates";
+import { formatMoney } from "@/lib/money";
+import { requireUser } from "@/server/auth";
+import { getRecurringPayments } from "@/server/family";
+
+import { payRecurringPaymentAction, toggleRecurringPaymentAction } from "../actions";
+
+export default async function RecurringPage() { const user = await requireUser(); const payments = await getRecurringPayments(user.id, true); const today = dateFromInput(todayInputValue()); return <><header className="page-header"><div><p className="eyebrow">Дом</p><h1>Обязательные платежи</h1><p className="muted">План платежей без автоматического списания.</p></div><Link href="/family" className="text-link">← Дом</Link></header><Link href="/family/recurring/new" className="button primary family-main-action">+ Новый платёж</Link><div className="transaction-list recurring-list">{payments.map((payment) => { const isOverdue = payment.isActive && payment.nextDueDate < today; return <article className="transaction-row" key={payment.id}><Link href={`/family/recurring/${payment.id}`}><b>{payment.name}</b><small>{payment.nextDueDate.toLocaleDateString("ru-RU")} · {payment.frequency === "MONTHLY" ? "ежемесячно" : "еженедельно"}</small></Link><div className="recurring-amount"><strong>{formatMoney(payment.amount.toString())}</strong><span className={`status-badge ${isOverdue ? "warning" : payment.isActive ? "success" : "neutral"}`}>{isOverdue ? "Просрочен" : payment.isActive ? "Активен" : "Пауза"}</span></div><div className="row-actions">{payment.isActive && <form action={payRecurringPaymentAction}><input type="hidden" name="id" value={payment.id}/><button className="text-link">Отметить оплаченным</button></form>}<form action={toggleRecurringPaymentAction}><input type="hidden" name="id" value={payment.id}/><input type="hidden" name="isActive" value={payment.isActive ? "false" : "true"}/><button className="text-button">{payment.isActive ? "Пауза" : "Включить"}</button></form></div></article>; })}{payments.length === 0 && <p className="empty">Обязательных платежей пока нет.</p>}</div></>; }

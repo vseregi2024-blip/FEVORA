@@ -1,0 +1,13 @@
+import Link from "next/link";
+
+import { dateToInput } from "@/lib/dates";
+import { requireUser } from "@/server/auth";
+import { getFamilyAccounts, getFamilyCategories, getRecurringPayment } from "@/server/family";
+
+import { archiveRecurringPaymentAction, updateRecurringPaymentAction } from "../../actions";
+
+export default async function RecurringEditPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireUser(); const { id } = await params;
+  const [payment, categories, accounts] = await Promise.all([getRecurringPayment(user.id, id), getFamilyCategories(user.id, "EXPENSE", true), getFamilyAccounts(user.id, true)]);
+  return <><header className="page-header"><div><p className="eyebrow">Обязательный платёж</p><h1>{payment.name}</h1></div><Link href="/family/recurring" className="text-link">К списку</Link></header><form action={updateRecurringPaymentAction} className="transaction-form"><input type="hidden" name="id" value={payment.id}/><label>Название<input name="name" required defaultValue={payment.name}/></label><div className="form-grid"><label>Сумма<input name="amount" required inputMode="decimal" defaultValue={payment.amount.toString()}/></label><label>Следующая дата<input name="nextDueDate" type="date" required defaultValue={dateToInput(payment.nextDueDate)}/></label></div><div className="form-grid"><label>Периодичность<select name="frequency" defaultValue={payment.frequency}><option value="MONTHLY">Ежемесячно</option><option value="WEEKLY">Еженедельно</option></select></label><label>Категория<select name="categoryId" defaultValue={payment.categoryId ?? ""}><option value="">Без категории</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label></div><label>Счёт / способ оплаты<select name="accountId" defaultValue={payment.familyAccountId ?? ""}><option value="">Без счёта</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label><label>Дата окончания<input name="endDate" type="date" defaultValue={payment.endDate ? dateToInput(payment.endDate) : ""}/></label><label>Комментарий<input name="note" defaultValue={payment.note ?? ""}/></label><button className="button primary">Сохранить изменения</button></form><div className="danger-zone"><h2>Архивировать</h2><p>Платёж перестанет показываться среди ожидаемых. История оплат сохранится.</p><form action={archiveRecurringPaymentAction}><input type="hidden" name="id" value={payment.id}/><button className="button danger">Архивировать</button></form></div></>;
+}

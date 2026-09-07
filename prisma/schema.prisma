@@ -167,6 +167,7 @@ model User {
   receipts                   Receipt[]
   recurringPayments          RecurringPayment[]
   savingsGoals               SavingsGoal[]
+  familyAccounts             FamilyAccount[]
   poultryBatches             PoultryBatch[]
   poultryMovements           PoultryMovement[]
   incubationBatches          IncubationBatch[]
@@ -201,7 +202,6 @@ model User {
   cosmetologyExpenseCategories CosmetologyExpenseCategory[]
   cosmetologyExpenses        CosmetologyExpense[]
   cosmetologyWalletMovements CosmetologyWalletMovement[]
-  poultryBreeds             PoultryBreed[]
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
 }
@@ -235,6 +235,8 @@ model Transaction {
   operationDate      DateTime                   @db.Date
   categoryId         String?
   category           Category?                  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  familyAccountId    String?
+  familyAccount      FamilyAccount?             @relation(fields: [familyAccountId], references: [id], onDelete: SetNull)
   module             FinanceModule              @default(GENERAL)
   description        String?
   source             TransactionSource          @default(WEB)
@@ -243,6 +245,7 @@ model Transaction {
   savingsMovement    SavingsMovement?
   recurringPaymentId String?
   recurringPayment   RecurringPayment?          @relation(fields: [recurringPaymentId], references: [id], onDelete: SetNull)
+  voiceRequestId     String?
   poultrySale        PoultrySale?               @relation("SaleIncome")
   feedLot            FeedLot?                   @relation("FeedPurchaseExpense")
   operationalExpense PoultryOperationalExpense?
@@ -262,9 +265,11 @@ model Transaction {
   deletedAt          DateTime?
 
   @@unique([recurringPaymentId, operationDate])
+  @@unique([userId, voiceRequestId])
   @@index([userId, operationDate])
   @@index([userId, deletedAt])
   @@index([categoryId])
+  @@index([familyAccountId])
   @@index([receiptId])
   @@index([recurringPaymentId])
 }
@@ -438,7 +443,6 @@ model FeedUsage {
   costAmount    Decimal?      @db.Decimal(18, 2)
   type          FeedUsageType @default(ASSIGNED)
   operationDate DateTime      @db.Date
-  purpose       String?
   comment       String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -502,20 +506,6 @@ model PoultryBatchBreed {
   deletedAt DateTime?
 
   @@index([batchId, deletedAt])
-}
-
-model PoultryBreed {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name       String
-  sortOrder  Int      @default(0)
-  isArchived Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([userId, name])
-  @@index([userId, isArchived, sortOrder])
 }
 
 model PoultryOrigin {
@@ -621,7 +611,6 @@ model PoultryEggCollection {
   breed         String?
   quantity      Int
   operationDate DateTime      @db.Date
-  collector     String?
   comment       String?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -936,6 +925,8 @@ model RecurringPayment {
   currency     String             @default("UAH") @db.Char(3)
   categoryId   String?
   category     Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  familyAccountId String?
+  familyAccount   FamilyAccount?  @relation(fields: [familyAccountId], references: [id], onDelete: SetNull)
   frequency    RecurringFrequency @default(MONTHLY)
   nextDueDate  DateTime           @db.Date
   endDate      DateTime?          @db.Date
@@ -948,6 +939,23 @@ model RecurringPayment {
 
   @@index([userId, isActive, nextDueDate])
   @@index([userId, archivedAt])
+  @@index([familyAccountId])
+}
+
+model FamilyAccount {
+  id                String             @id @default(cuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  sortOrder         Int                @default(0)
+  isArchived        Boolean            @default(false)
+  transactions      Transaction[]
+  recurringPayments RecurringPayment[]
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, isArchived, sortOrder])
 }
 
 model SavingsGoal {
@@ -956,6 +964,7 @@ model SavingsGoal {
   user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   name         String
   targetAmount Decimal?          @db.Decimal(18, 2)
+  targetDate   DateTime?         @db.Date
   status       SavingsGoalStatus @default(ACTIVE)
   note         String?
   movements    SavingsMovement[]

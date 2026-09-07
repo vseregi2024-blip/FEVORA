@@ -29,6 +29,10 @@
   margin-top: 20px;
 }
 
+.actions button:first-child {
+  color: var(--ink);
+}
+
 @media (min-width: 801px) {
   .backdrop {
     align-items: center;
