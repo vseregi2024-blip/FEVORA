@@ -18,7 +18,7 @@ describe("Family mobile v2 contract", () => {
   });
 
   it("keeps account links nullable so old operations stay valid", () => {
-    expect(schema).toContain("familyAccountId    String?");
+    expect(schema).toMatch(/familyAccountId\s+String\?/);
     expect(schema).toContain("targetDate   DateTime?");
   });
 

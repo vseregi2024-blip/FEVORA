@@ -69,7 +69,7 @@ describe("Family AI voice integration contracts", () => {
   const parserRoute = readFileSync("src/app/api/family/voice/parse/route.ts", "utf8");
 
   it("uses a nullable, per-user unique request id without destructive SQL", () => {
-    expect(schema).toContain("voiceRequestId     String?");
+    expect(schema).toMatch(/voiceRequestId\s+String\?/);
     expect(schema).toContain("@@unique([userId, voiceRequestId])");
     expect(migration).toContain('ADD COLUMN "voiceRequestId" TEXT');
     expect(migration).toContain('CREATE UNIQUE INDEX "Transaction_userId_voiceRequestId_key"');

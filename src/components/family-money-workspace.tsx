@@ -13,7 +13,7 @@ export function FamilyMoneyWorkspace({ balance, income, expense, recent, account
   const [accountsOpen, setAccountsOpen] = useState(false); let cursor = 0;
   const donut = analytics.categories.length ? `conic-gradient(${analytics.categories.map((item, index) => { const start = cursor; cursor += item.percent; return `${palette[index % palette.length]} ${start}% ${cursor}%`; }).join(", ")})` : "#e7e2d8";
   return <div className="money-workspace family-modern">
-    <header className="money-toolbar"><Link href="/dashboard" className="money-global-home">← Главная</Link><div><span>Семья</span><small>{new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(new Date())}</small></div><button type="button" onClick={() => setAccountsOpen(true)} aria-label="Открыть счета">▣</button></header>
+    <header className="money-toolbar"><Link href="/dashboard" className="money-global-home">← FEVORA</Link><div><span>IMPERIA</span><small className="imperia-tagline">My money • business • empire</small></div><button type="button" onClick={() => setAccountsOpen(true)} aria-label="Открыть счета">▣</button></header>
     <section className="money-balance-strip"><span>Баланс семьи</span><strong>{balance}</strong></section>
     <section className="money-month-line" aria-label="Итоги текущего месяца"><span><i className="income-dot"/>Доходы месяца <b>{income}</b></span><span><i className="expense-dot"/>Расходы месяца <b>{expense}</b></span></section>
 

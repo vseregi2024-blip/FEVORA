@@ -223,6 +223,7 @@ body { overflow-x: hidden; }
 .money-toolbar > div { display: grid; justify-items: center; gap: 2px; }
 .money-toolbar span { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 900; }
 .money-toolbar small { color: var(--muted); text-transform: capitalize; }
+.money-toolbar small.imperia-tagline { text-transform: none; }
 .money-balance-strip { min-height: 72px; padding: 14px 18px; border-radius: 18px; color: #fff; background: linear-gradient(135deg, var(--sage), #718c79); display: flex; align-items: center; justify-content: space-between; gap: 12px; box-shadow: var(--shadow); }
 .money-balance-strip span { color: #eff5f0; font-size: .84rem; }
 .money-balance-strip strong { font-size: clamp(1.45rem, 6vw, 2.1rem); letter-spacing: -.04em; text-align: right; }
@@ -695,11 +696,131 @@ html[data-family-theme="light"] .family-voice-actions .voice-confirm { border-co
 }
 .app-main:has(:is(.family-modern, .family-modern-header, .family-home-link, .money-entry-page, .money-analytics-header, .family-settings-grid, .family-main-action, .family-settings-link)) { background: radial-gradient(circle at 94% 0, color-mix(in srgb, var(--family-primary) 14%, transparent), transparent 30%), var(--family-bg); }
 body:has(.family-bottom-nav) .app-main { background: radial-gradient(circle at 94% 0, color-mix(in srgb, var(--family-primary) 14%, transparent), transparent 30%), var(--family-bg); }
+body:has(.family-bottom-nav) :is(input, select, textarea) { color: var(--family-text); background: var(--family-surface); border-color: var(--family-border); caret-color: var(--family-primary-strong); color-scheme: dark; }
+body:has(.family-bottom-nav) :is(input, textarea)::placeholder { color: var(--family-muted); opacity: 1; }
+html[data-family-theme="light"] body:has(.family-bottom-nav) :is(input, select, textarea) { color-scheme: light; }
 body:has(.family-bottom-nav) .empty-state { border-color: var(--family-border); background: var(--family-surface); color: var(--family-muted); }
 body:has(.family-bottom-nav) .empty-state h2 { color: var(--family-text); }
 body:has(:is(.family-modern, .family-modern-header, .family-home-link, .money-entry-page, .money-analytics-header, .family-settings-grid, .family-main-action, .family-settings-link)) :is(.app-card, .metric-grid article, .panel, .filters) { border-color: var(--family-border); background: var(--family-surface); box-shadow: var(--family-shadow); }
 body:has(:is(.family-modern, .family-modern-header, .family-home-link, .money-entry-page, .money-analytics-header, .family-settings-grid, .family-main-action, .family-settings-link)) :is(.income, .income-dot) { color: var(--family-income); }
 body:has(:is(.family-modern, .family-modern-header, .family-home-link, .money-entry-page, .money-analytics-header, .family-settings-grid, .family-main-action, .family-settings-link)) :is(.expense, .expense-dot) { color: var(--family-expense); }
+
+/* IMPERIA date field */
+.imperia-date-field { position: relative; display: grid; gap: 7px; }
+.imperia-field-label { color: var(--family-text); font-weight: 700; }
+.imperia-field-label small { color: var(--family-muted); font-weight: 500; }
+.imperia-date-trigger { width: 100%; min-height: 48px; padding: 10px 13px; border: 1px solid var(--family-border); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--family-surface); color: var(--family-muted); font: inherit; text-align: left; }
+.imperia-date-trigger.has-value { color: var(--family-text); }
+.imperia-date-trigger i { color: var(--family-primary); font-size: 1.1rem; font-style: normal; }
+.imperia-calendar { position: absolute; z-index: 30; top: calc(100% + 7px); left: 0; width: min(360px, calc(100vw - 40px)); padding: 14px; border: 1px solid color-mix(in srgb, var(--family-primary) 52%, var(--family-border)); border-radius: 17px; background: var(--family-surface-raised); color: var(--family-text); box-shadow: 0 24px 70px #000a; }
+.imperia-calendar header { display: grid; grid-template-columns: 38px 1fr 38px; align-items: center; gap: 8px; margin-bottom: 10px; }
+.imperia-calendar header strong { text-align: center; text-transform: capitalize; }
+.imperia-calendar button { border: 0; font: inherit; cursor: pointer; }
+.imperia-calendar header button { width: 38px; height: 38px; border: 1px solid var(--family-border); border-radius: 10px; background: var(--family-surface); color: var(--family-primary-strong); font-size: 1.45rem; }
+.imperia-calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.imperia-calendar-grid > b { padding: 6px 0; color: var(--family-muted); font-size: .68rem; text-align: center; }
+.imperia-calendar-grid > button { aspect-ratio: 1; border-radius: 9px; background: transparent; color: var(--family-text); }
+.imperia-calendar-grid > button:hover { background: color-mix(in srgb, var(--family-primary) 18%, transparent); }
+.imperia-calendar-grid > button.selected { background: var(--family-button); color: var(--family-primary-contrast); font-weight: 850; }
+.imperia-calendar footer { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--family-border); display: flex; justify-content: flex-end; gap: 8px; }
+.imperia-calendar footer button { min-height: 36px; padding: 6px 11px; border-radius: 9px; background: color-mix(in srgb, var(--family-primary) 16%, var(--family-surface)); color: var(--family-primary-strong); font-weight: 750; }
+html[data-family-theme="light"] .imperia-calendar { box-shadow: 0 24px 60px #51336733; }
+
+/* IMPERIA client card */
+.client-profile-form textarea { min-height: 92px; resize: vertical; }
+.anamnesis-open-button { width: 100%; min-height: 74px; padding: 14px 16px; border: 1px solid color-mix(in srgb, var(--family-primary) 48%, var(--family-border)); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 18px; background: color-mix(in srgb, var(--family-primary) 10%, var(--family-surface)); color: var(--family-text); text-align: left; }
+.anamnesis-open-button span { display: grid; gap: 4px; }
+.anamnesis-open-button b { font-size: 1rem; }
+.anamnesis-open-button small { color: var(--family-muted); }
+.anamnesis-open-button strong { flex: none; color: var(--family-primary-strong); font-size: .78rem; }
+.anamnesis-backdrop { position: fixed; z-index: 80; inset: 0; padding: 18px; display: none; align-items: center; justify-content: center; background: #050605df; backdrop-filter: blur(10px); }
+.anamnesis-backdrop.open { display: flex; }
+.anamnesis-dialog { width: min(620px, 100%); max-height: calc(100dvh - 36px); overflow: auto; padding: 20px; border: 1px solid color-mix(in srgb, var(--family-primary) 55%, var(--family-border)); border-radius: 22px; display: grid; gap: 14px; background: var(--family-surface-raised); color: var(--family-text); box-shadow: 0 28px 90px #000c; }
+.anamnesis-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.anamnesis-dialog > header h2 { margin: 0; }
+.anamnesis-dialog > header button { width: 40px; height: 40px; border: 1px solid var(--family-border); border-radius: 50%; background: var(--family-surface); color: var(--family-text); font-size: 1.4rem; }
+.anamnesis-dialog label { display: grid; gap: 7px; color: var(--family-text); font-weight: 700; }
+.anamnesis-dialog textarea { min-height: 92px; }
+.client-referral-card { margin: 22px 0; padding: 20px; border: 1px solid var(--family-border); border-radius: 18px; background: var(--family-surface); box-shadow: var(--family-shadow); }
+.client-referral-card h2 { margin: 0; }
+.client-referral-card dl { margin: 18px 0 10px; display: grid; gap: 10px; }
+.client-referral-card dl div { padding-top: 10px; border-top: 1px solid var(--family-border); display: flex; justify-content: space-between; gap: 16px; }
+.client-referral-card dt { color: var(--family-muted); }
+.client-referral-card dd { margin: 0; font-weight: 800; text-align: right; }
+.client-referral-card dd a, .client-referral-list a { color: var(--family-primary-strong); }
+.client-referral-list { margin: 10px 0; display: flex; flex-wrap: wrap; gap: 7px; }
+.client-referral-list a { padding: 7px 10px; border: 1px solid var(--family-border); border-radius: 999px; background: var(--family-surface-raised); }
+.treatment-plan-card { align-self: start; }
+html[data-family-theme="light"] .anamnesis-backdrop { background: #2e183f88; }
+
+/* Beauty Bonus Club inside IMPERIA */
+.loyalty-card { margin: 22px 0; padding: 20px; border: 1px solid var(--family-border); border-radius: 19px; background: var(--family-surface); color: var(--family-text); box-shadow: var(--family-shadow); }
+.loyalty-card.connected { border-color: color-mix(in srgb, var(--family-primary) 58%, var(--family-border)); background: linear-gradient(145deg, color-mix(in srgb, var(--family-primary) 8%, var(--family-surface)), var(--family-surface)); }
+.loyalty-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+.loyalty-card h2 { margin: 0; }
+.loyalty-status { flex: none; padding: 6px 9px; border: 1px solid var(--family-border); border-radius: 999px; color: var(--family-muted); font-size: .68rem; font-weight: 850; }
+.loyalty-status.connected { border-color: color-mix(in srgb, var(--family-income) 55%, var(--family-border)); color: var(--family-income); }
+.loyalty-status.unavailable { color: var(--family-expense); }
+.loyalty-connect-form { margin-top: 16px; }
+.loyalty-connect-form .button { min-height: 46px; margin: 0; }
+.loyalty-search-phone, .loyalty-linked-client { margin: 14px 0 0; color: var(--family-muted); }
+.loyalty-search-form { margin-top: 16px; display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 10px; }
+.loyalty-search-form label { display: grid; gap: 7px; font-weight: 750; }
+.loyalty-search-form .button { min-height: 48px; margin: 0; }
+.loyalty-search-form .button.secondary { border-color: color-mix(in srgb, var(--family-primary) 62%, var(--family-border)); background: var(--family-button); color: var(--family-primary-contrast); }
+.loyalty-candidates { margin-top: 14px; display: grid; gap: 9px; }
+.loyalty-candidates article { padding: 12px; border: 1px solid var(--family-border); border-radius: 13px; display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--family-surface-raised); }
+.loyalty-candidates article > span { display: grid; gap: 3px; }
+.loyalty-candidates small { color: var(--family-muted); }
+.loyalty-candidates .button { margin: 0; }
+.loyalty-candidate { overflow: visible; }
+.loyalty-confirm { flex: none; position: relative; }
+.loyalty-confirm > summary { min-height: 44px; list-style: none; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.loyalty-confirm > summary::-webkit-details-marker { display: none; }
+.loyalty-confirm-panel { margin-top: 10px; padding: 13px; border: 1px solid var(--family-border); border-radius: 12px; display: grid; gap: 8px; background: var(--family-surface); }
+.loyalty-confirm-panel p { margin: 0; color: var(--family-muted); }
+.loyalty-empty-state { margin-top: 14px; padding: 13px; border: 1px solid var(--family-border); border-radius: 12px; background: var(--family-surface-raised); }
+.loyalty-empty-state p { margin-top: 0; }
+.loyalty-cancel-search { justify-self: start; }
+.loyalty-error { padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--family-expense) 16%, var(--family-surface)); color: var(--family-expense); }
+.loyalty-balance { margin-top: 17px; padding: 18px; border: 1px solid color-mix(in srgb, var(--family-primary) 52%, var(--family-border)); border-radius: 15px; display: grid; gap: 4px; background: var(--family-hero); color: var(--family-on-hero); }
+.loyalty-balance span { font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; opacity: .75; }
+.loyalty-balance strong { font-size: clamp(1.8rem, 5vw, 2.8rem); }
+.loyalty-balance small { opacity: .78; }
+.loyalty-metrics { margin-top: 10px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.loyalty-metrics article { padding: 12px; border: 1px solid var(--family-border); border-radius: 12px; display: grid; gap: 5px; background: var(--family-surface-raised); }
+.loyalty-metrics span { color: var(--family-muted); font-size: .7rem; }
+.loyalty-telegram { margin-top: 10px; padding: 11px 13px; border: 1px solid var(--family-border); border-radius: 12px; display: flex; justify-content: space-between; gap: 12px; }
+.loyalty-referrer { color: var(--family-muted); }
+.loyalty-referrer b { color: var(--family-text); }
+.loyalty-history, .loyalty-unlink, .loyalty-actions details { margin-top: 12px; border-top: 1px solid var(--family-border); padding-top: 12px; }
+.loyalty-history > summary, .loyalty-unlink > summary, .loyalty-actions summary { color: var(--family-primary-strong); font-weight: 800; cursor: pointer; }
+.loyalty-history > div { margin-top: 10px; display: grid; }
+.loyalty-history article { padding: 10px 0; border-top: 1px solid var(--family-border); display: flex; justify-content: space-between; gap: 14px; }
+.loyalty-history article span { display: grid; gap: 3px; }
+.loyalty-history article small { color: var(--family-muted); }
+.loyalty-history article strong { flex: none; }
+.loyalty-actions { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+.loyalty-actions .button, .loyalty-load-more { min-height: 44px; margin: 0; }
+.loyalty-load-more { justify-self: start; margin-top: 10px; }
+
+@media (max-width: 600px) {
+  .loyalty-card { padding: 16px; }
+  .loyalty-search-form { grid-template-columns: 1fr; }
+  .loyalty-candidates article { align-items: stretch; flex-direction: column; }
+  .loyalty-confirm { width: 100%; }
+  .loyalty-confirm > summary { width: 100%; }
+  .loyalty-metrics { grid-template-columns: 1fr 1fr; }
+  .loyalty-history article { align-items: flex-start; }
+}
+
+@media (max-width: 600px) {
+  .anamnesis-open-button { align-items: flex-start; }
+  .anamnesis-open-button strong { padding-top: 3px; }
+  .anamnesis-dialog { padding: 17px; border-radius: 18px; }
+  .client-referral-card dl div { display: grid; gap: 4px; }
+  .client-referral-card dd { text-align: left; }
+}
 
 /* Main Family screen */
 .family-modern .money-toolbar { border-color: var(--family-border); }

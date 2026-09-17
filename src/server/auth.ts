@@ -75,7 +75,20 @@ export async function authenticateOwner(email: string, password: string, name?: 
     }
 
     const user = await prisma.user.create({
-      data: { email: normalizedEmail, name: name?.trim() || null, passwordHash: await hash(password, 12) },
+      data: {
+        email: normalizedEmail,
+        name: name?.trim() || null,
+        passwordHash: await hash(password, 12),
+        projects: {
+          create: [
+            { code: "FAMILY", name: "Семья", sortOrder: 10 },
+            { code: "POULTRY", name: "Птицеводство", sortOrder: 20 },
+            { code: "GOODS", name: "Товарка", sortOrder: 30 },
+            { code: "INFOBUSINESS", name: "Инфобизнес", sortOrder: 40 },
+            { code: "COSMETOLOGY", name: "Косметология", sortOrder: 50 },
+          ],
+        },
+      },
     });
     await setSession(user.id);
     return { user };

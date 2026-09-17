@@ -93,7 +93,7 @@ function isActive(pathname: string, href: string, isAdd?: boolean) {
 
 export function ProjectBottomNavigation() {
   const pathname = usePathname();
-  if (pathname === "/family" || pathname.startsWith("/family/")) return <MobileBottomNavigation />;
+  if (pathname === "/family" || pathname.startsWith("/family/") || pathname === "/cosmetology" || pathname.startsWith("/cosmetology/")) return <MobileBottomNavigation />;
 
   const projectNavigation = projectNavigations.find(({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   const navigation = projectNavigation ?? { label: "Основная навигация", links: commonLinks };

@@ -1,0 +1,38 @@
+import { FinanceModule } from "@prisma/client";
+import Link from "next/link";
+
+import { formatMoney, minorUnitsToMoney } from "@/lib/money";
+import { requireUser } from "@/server/auth";
+import { getInternalTransfer, getMoneyOverview, getMoneyProjects, getMoneyWorkspace } from "@/server/money";
+
+const allowed = new Set<FinanceModule>([FinanceModule.FAMILY, FinanceModule.POULTRY, FinanceModule.GOODS, FinanceModule.INFOBUSINESS, FinanceModule.COSMETOLOGY]);
+const icons = { CASH: "💵", BANK: "🏦", CARD: "💳", OTHER: "👛" } as const;
+
+export default async function MoneyPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const user = await requireUser();
+  const query = await searchParams;
+  const projects = await getMoneyProjects(user.id);
+  const requested = query.project as FinanceModule | undefined;
+  const code = requested && allowed.has(requested) ? requested : (projects[0]?.code ?? FinanceModule.FAMILY);
+  const [data, overview, completedTransfer] = await Promise.all([getMoneyWorkspace(user.id, code), getMoneyOverview(user.id), query.transfer ? getInternalTransfer(user.id, query.transfer) : Promise.resolve(null)]);
+  const active = data.accounts.filter((account) => account.isActive);
+  const archived = data.accounts.filter((account) => !account.isActive);
+  const wallets = active.filter((account) => account.kind === "WALLET");
+  const envelopes = active.filter((account) => account.kind === "ENVELOPE");
+  const notice = query.created === "WALLET" ? "Кошелёк создан ✓" : query.created === "ENVELOPE" ? "Конверт создан ✓" : query.allocated ? "Деньги распределены ✓" : query.updated ? "Изменения сохранены ✓" : query.archived ? "Счёт перемещён в архив ✓" : query.deleted ? "Неиспользованный счёт удалён ✓" : null;
+  return <>
+    <header className="page-header"><div><p className="eyebrow">Управление деньгами</p><h1>Мои деньги</h1><p className="muted">Кошельки — где деньги находятся. Конверты — на что они предназначены.</p></div><div className="page-actions"><Link href="/money/transfers" className="button secondary">История</Link><Link href={`/money/transfer?project=${code}`} className="button primary">↔ Перевести</Link></div></header>
+    {notice && <p className="notice">{notice}</p>}
+    {completedTransfer && <section className="notice money-transfer-success"><b>✓ Перевод выполнен</b><span>{completedTransfer.sourceAccount.project.name} / {completedTransfer.sourceAccount.name} −{formatMoney(completedTransfer.sourceAmount.toString(), completedTransfer.sourceCurrency)}</span><span>{completedTransfer.targetAccount.project.name} / {completedTransfer.targetAccount.name} +{formatMoney(completedTransfer.targetAmount.toString(), completedTransfer.targetCurrency)}</span></section>}
+    <section className="money-global-summary"><span>Общий капитал FEVORA</span>{overview.summaries.length ? overview.summaries.map((summary) => <strong key={summary.currency}>{formatMoney(minorUnitsToMoney(summary.total), summary.currency)}</strong>) : <strong>{formatMoney("0.00", user.defaultCurrency)}</strong>}</section>
+    <nav className="period-tabs money-project-tabs" aria-label="Проект">{projects.map((project) => <Link key={project.id} href={`/money?project=${project.code}`} className={project.code === code ? "active" : ""}>{project.name}</Link>)}</nav>
+    <section className="money-summary-grid">{data.summaries.length ? data.summaries.map((summary) => <article className="balance-card" key={summary.currency}><p>{data.project.name} · всего денег</p><strong>{formatMoney(minorUnitsToMoney(summary.total), summary.currency)}</strong><div className="money-summary-line"><span>Свободно {formatMoney(minorUnitsToMoney(summary.free), summary.currency)}</span><span>Распределено {formatMoney(minorUnitsToMoney(summary.allocated), summary.currency)}</span></div></article>) : <article className="balance-card"><p>{data.project.name} · всего денег</p><strong>{formatMoney("0.00", user.defaultCurrency)}</strong><span>Добавьте первый кошелёк</span></article>}</section>
+    {data.transferSummary.length > 0 && <section className="metric-grid money-transfer-metrics">{data.transferSummary.map((summary) => <article key={summary.currency}><span>Входящие переводы</span><strong className="income">+{formatMoney(minorUnitsToMoney(summary.incoming), summary.currency)}</strong><span>Исходящие переводы</span><strong className="expense">−{formatMoney(minorUnitsToMoney(summary.outgoing), summary.currency)}</strong></article>)}</section>}
+    {data.legacySummary.length > 0 && <><section className="section-header"><div><p className="eyebrow">Существующий учёт</p><h2>Доходы и расходы</h2><p className="muted">Показаны отдельно и не переносятся в новые кошельки автоматически.</p></div></section><section className="metric-grid money-legacy-metrics">{data.legacySummary.map((summary) => <article key={summary.currency}><span>Фактические доходы</span><strong className="income">{formatMoney(minorUnitsToMoney(summary.income), summary.currency)}</strong><span>Фактические расходы</span><strong className="expense">{formatMoney(minorUnitsToMoney(summary.expense), summary.currency)}</strong><span>Результат</span><strong>{formatMoney(minorUnitsToMoney(summary.result), summary.currency)}</strong>{code === FinanceModule.FAMILY && <><span>Сбережения</span><strong>{formatMoney(minorUnitsToMoney(summary.savings), summary.currency)}</strong></>}</article>)}</section></>}
+    <section className="section-header"><div><p className="eyebrow">Где находятся деньги</p><h2>Кошельки</h2></div><Link className="text-link money-add-link" href={`/money/new?project=${code}&kind=WALLET`}>＋ Добавить</Link></section>
+    <div className="money-account-list">{wallets.map((account) => <Link href={`/money/${account.id}`} className="money-account-row" key={account.id}><span className="money-account-icon">{icons[account.type]}</span><span><b>{account.name}{account.isPrimary ? " · основной" : ""}</b><small>{account.type === "CASH" ? "Наличные" : account.type === "BANK" ? "Банковский счёт" : account.type === "CARD" ? "Карта" : "Другой кошелёк"}</small></span><strong>{formatMoney(minorUnitsToMoney(account.balanceMinor), account.currency)}</strong></Link>)}{!wallets.length && <p className="empty">Создайте кошелёк и укажите стартовый остаток.</p>}</div>
+    <section className="section-header"><div><p className="eyebrow">Назначение денег</p><h2>Конверты</h2></div><Link className="text-link money-add-link" href={`/money/new?project=${code}&kind=ENVELOPE`}>＋ Добавить</Link></section>
+    <div className="money-account-list">{envelopes.map((account) => <Link href={`/money/${account.id}`} className="money-account-row" key={account.id}><span className="money-account-icon envelope">✦</span><span><b>{account.name}</b><small>{account.targetAmount ? `Цель ${formatMoney(account.targetAmount.toString(), account.currency)}` : "Виртуальное назначение"}</small></span><strong>{formatMoney(minorUnitsToMoney(account.balanceMinor), account.currency)}</strong></Link>)}{!envelopes.length && <p className="empty">Конверты помогают распределить уже имеющиеся деньги.</p>}</div>
+    {archived.length > 0 && <details className="money-archive"><summary>Архив · {archived.length}</summary><div className="money-account-list">{archived.map((account) => <Link href={`/money/${account.id}`} className="money-account-row archived" key={account.id}><span className="money-account-icon">{account.kind === "ENVELOPE" ? "✦" : icons[account.type]}</span><span><b>{account.name}</b><small>История и остаток сохранены</small></span><strong>{formatMoney(minorUnitsToMoney(account.balanceMinor), account.currency)}</strong></Link>)}</div></details>}
+  </>;
+}
