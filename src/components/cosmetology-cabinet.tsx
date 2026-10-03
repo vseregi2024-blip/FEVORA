@@ -1,0 +1,24 @@
+import Link from "next/link";
+
+import { AppIcon } from "@/components/ui/icons";
+
+type Appointment = { date: string; status: string };
+const weekdays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+function dayKey(value: Date) { return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`; }
+
+export function CosmetologyCabinet({ today, appointments, todayIncome, todayProcurement, todayFree, monthIncome, monthExpense, monthResult, reserve, reserveHref, clients, newClients, inventoryItems, lowStock }: { today: string; appointments: Appointment[]; todayIncome: string; todayProcurement: string; todayFree: string; monthIncome: string; monthExpense: string; monthResult: string; reserve: string; reserveHref: string; clients: number; newClients: number; inventoryItems: number; lowStock: number }) {
+  const current = new Date(`${today}T12:00:00`);
+  const monthStart = new Date(current.getFullYear(), current.getMonth(), 1);
+  const gridStart = new Date(monthStart); gridStart.setDate(monthStart.getDate() - ((monthStart.getDay() + 6) % 7));
+  const days = Array.from({ length: 42 }, (_, index) => { const day = new Date(gridStart); day.setDate(gridStart.getDate() + index); return day; });
+  const byDate = new Map<string, number>(); for (const appointment of appointments) byDate.set(appointment.date, (byDate.get(appointment.date) ?? 0) + 1);
+  const upcoming = appointments.filter((appointment) => appointment.status === "SCHEDULED" && appointment.date >= today).length;
+  return <div className="cosmetology-cabinet">
+    <section className="cosmetology-cabinet-calendar"><header><span><p className="eyebrow">Календарь</p><h2>{new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(current)}</h2></span><Link href="/cosmetology/visits">Открыть календарь <AppIcon name="arrow"/></Link></header><div className="cosmetology-cabinet-weekdays">{weekdays.map((day) => <b key={day}>{day}</b>)}</div><div className="cosmetology-cabinet-days">{days.map((day) => { const key = dayKey(day); const count = byDate.get(key) ?? 0; return <Link key={key} href={`/cosmetology/visits?date=${key}`} className={`${day.getMonth() === current.getMonth() ? "" : "other-month"} ${key === today ? "today" : ""} ${count ? "has-appointments" : ""}`}><span>{day.getDate()}</span>{count > 0 && <i>{count}</i>}</Link>; })}</div><p>{upcoming ? `Запланировано записей: ${upcoming}` : "На этот период записей пока нет."}</p></section>
+    <section className="cosmetology-cabinet-finance"><header><span><AppIcon name="analytics"/><span><p className="eyebrow">Финансы косметологии</p><h2>Коротко о деньгах</h2></span></span><Link href="/analytics?module=COSMETOLOGY">Все операции <AppIcon name="arrow"/></Link></header><div className="cosmetology-cabinet-finance-grid"><article><small>Сегодня</small><b>Поступило <strong>{todayIncome}</strong></b><b>На закупку <strong>{todayProcurement}</strong></b><b>Свободно <strong>{todayFree}</strong></b></article><article><small>Месяц</small><b>Доходы <strong className="income">{monthIncome}</strong></b><b>Расходы <strong className="expense">{monthExpense}</strong></b><b>Результат <strong>{monthResult}</strong></b></article></div></section>
+    <Link href={reserveHref} className="cosmetology-cabinet-reserve"><AppIcon name="savings"/><span><small>Конверт IMPERIA</small><b>Резерв на закупку</b><em>{reserve}</em></span><AppIcon name="arrow"/></Link>
+    <section className="cosmetology-cabinet-work-grid"><Link href="/cosmetology/clients"><AppIcon name="clients"/><span><small>Клиенты</small><b>{clients}</b><em>{newClients ? `Новых за месяц: ${newClients}` : "Новых за месяц нет"}</em></span><AppIcon name="arrow"/></Link><Link href="/cosmetology/inventory"><AppIcon name="feed"/><span><small>Препараты</small><b>{inventoryItems}</b><em>{lowStock ? `Низкий остаток: ${lowStock}` : "Все остатки в норме"}</em></span><AppIcon name="arrow"/></Link></section>
+    <section className="cosmetology-cabinet-attention"><header><span><AppIcon name="bell"/><h2>Нужно внимание</h2></span></header>{lowStock || upcoming ? <div>{lowStock > 0 && <Link href="/cosmetology/inventory">Заканчиваются препараты: {lowStock}<AppIcon name="arrow"/></Link>}{upcoming > 0 && <Link href="/cosmetology/visits">Ожидают проведения записи: {upcoming}<AppIcon name="arrow"/></Link>}</div> : <p>Срочных задач нет.</p>}</section>
+    <section className="cosmetology-cabinet-links"><Link href="/cosmetology/certificates"><AppIcon name="money"/><span>Сертификаты</span><AppIcon name="arrow"/></Link><Link href="/cosmetology/procedures"><AppIcon name="sparkles"/><span>Услуги и прайс</span><AppIcon name="arrow"/></Link><Link href="/analytics?module=COSMETOLOGY"><AppIcon name="operations"/><span>Финансы</span><AppIcon name="arrow"/></Link><Link href="/analytics?module=COSMETOLOGY"><AppIcon name="analytics"/><span>Аналитика</span><AppIcon name="arrow"/></Link></section>
+  </div>;
+}

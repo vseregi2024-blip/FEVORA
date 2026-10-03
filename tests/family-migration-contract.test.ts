@@ -25,9 +25,9 @@ describe("Family database integrity migration", () => {
     expect(migration).toContain('ADD COLUMN "archivedAt"');
   });
 
-  it("claims the current recurring due date atomically before creating an expense", () => {
+  it("claims the current recurring due date atomically when the user explicitly marks it paid", () => {
     expect(familyService).toContain("recurringPayment.updateMany");
-    expect(familyService).toContain("recurringPaymentId_operationDate");
+    expect(familyService).toContain("payRecurringFromFamily");
   });
 
   it("supports category archive and restore with one reversible service", () => {

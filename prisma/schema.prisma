@@ -99,12 +99,6 @@ enum RecurringFrequency {
   WEEKLY
 }
 
-enum SavingsGoalStatus {
-  ACTIVE
-  COMPLETED
-  ARCHIVED
-}
-
 enum PoultryBatchStatus {
   ACTIVE
   COMPLETED
@@ -192,7 +186,6 @@ model User {
   categories                    Category[]
   receipts                      Receipt[]
   recurringPayments             RecurringPayment[]
-  savingsGoals                  SavingsGoal[]
   familyAccounts                FamilyAccount[]
   poultryBatches                PoultryBatch[]
   poultryMovements              PoultryMovement[]
@@ -270,10 +263,14 @@ model MoneyAccount {
   targetAmount       Decimal?           @db.Decimal(18, 2)
   targetDate         DateTime?          @db.Date
   note               String?
+  icon               String?
+  categoryId         String?
+  category           Category?          @relation("MoneyAccountCategory", fields: [categoryId], references: [id], onDelete: SetNull)
   isPrimary          Boolean            @default(false)
   isActive           Boolean            @default(true)
   sortOrder          Int                @default(0)
   moneyLedgerEntries MoneyLedgerEntry[]
+  transactions       Transaction[]       @relation("TransactionMoneyAccount")
   outgoingTransfers  InternalTransfer[] @relation("InternalTransferSource")
   incomingTransfers  InternalTransfer[] @relation("InternalTransferTarget")
   createdAt          DateTime           @default(now())
@@ -322,6 +319,8 @@ model MoneyLedgerEntry {
   account       MoneyAccount         @relation(fields: [accountId], references: [id], onDelete: Restrict)
   transferId    String?
   transfer      InternalTransfer?    @relation(fields: [transferId], references: [id], onDelete: Restrict)
+  transactionId String?
+  transaction   Transaction?         @relation("MoneyLedgerEntryTransaction", fields: [transactionId], references: [id], onDelete: SetNull)
   type          MoneyLedgerEntryType
   amount        Decimal              @db.Decimal(18, 2)
   currency      String               @db.Char(3)
@@ -332,6 +331,7 @@ model MoneyLedgerEntry {
   @@unique([transferId, accountId])
   @@index([userId, projectId, operationDate])
   @@index([accountId, reversedAt, operationDate])
+  @@index([transactionId])
 }
 
 model Category {
@@ -348,6 +348,7 @@ model Category {
   updatedAt         DateTime           @updatedAt
   transactions      Transaction[]
   recurringPayments RecurringPayment[]
+  moneyAccounts     MoneyAccount[]      @relation("MoneyAccountCategory")
 
   @@unique([userId, module, name])
   @@index([module, isArchived])
@@ -365,12 +366,13 @@ model Transaction {
   category                     Category?                     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   familyAccountId              String?
   familyAccount                FamilyAccount?                @relation(fields: [familyAccountId], references: [id], onDelete: SetNull)
+  moneyAccountId               String?
+  moneyAccount                 MoneyAccount?                 @relation("TransactionMoneyAccount", fields: [moneyAccountId], references: [id], onDelete: SetNull)
   module                       FinanceModule                 @default(GENERAL)
   description                  String?
   source                       TransactionSource             @default(WEB)
   receiptId                    String?
   receipt                      Receipt?                      @relation(fields: [receiptId], references: [id], onDelete: SetNull)
-  savingsMovement              SavingsMovement?
   recurringPaymentId           String?
   recurringPayment             RecurringPayment?             @relation(fields: [recurringPaymentId], references: [id], onDelete: SetNull)
   voiceRequestId               String?
@@ -391,6 +393,7 @@ model Transaction {
   cosmetologyPaymentId         String?
   cosmetologyPayment           CosmetologyPayment?           @relation("CosmetologyPaymentIncome", fields: [cosmetologyPaymentId], references: [id], onDelete: SetNull)
   cosmetologyPaymentComponents CosmetologyPaymentComponent[] @relation("CosmetologyPaymentComponentTransaction")
+  moneyLedgerEntries           MoneyLedgerEntry[]            @relation("MoneyLedgerEntryTransaction")
   createdAt                    DateTime                      @default(now())
   updatedAt                    DateTime                      @updatedAt
   deletedAt                    DateTime?
@@ -401,6 +404,7 @@ model Transaction {
   @@index([userId, deletedAt])
   @@index([categoryId])
   @@index([familyAccountId])
+  @@index([moneyAccountId])
   @@index([receiptId])
   @@index([recurringPaymentId])
   @@index([cosmetologyPaymentId, operationDate])
@@ -1088,35 +1092,6 @@ model FamilyAccount {
 
   @@unique([userId, name])
   @@index([userId, isArchived, sortOrder])
-}
-
-model SavingsGoal {
-  id           String            @id @default(cuid())
-  userId       String
-  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String
-  targetAmount Decimal?          @db.Decimal(18, 2)
-  targetDate   DateTime?         @db.Date
-  status       SavingsGoalStatus @default(ACTIVE)
-  note         String?
-  movements    SavingsMovement[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-
-  @@index([userId, status])
-}
-
-model SavingsMovement {
-  id            String          @id @default(cuid())
-  goalId        String
-  goal          SavingsGoal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
-  transactionId String          @unique
-  transaction   Transaction     @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  direction     TransactionType
-  amount        Decimal         @db.Decimal(18, 2)
-  createdAt     DateTime        @default(now())
-
-  @@index([goalId, createdAt])
 }
 
 enum CosmetologyUnit {

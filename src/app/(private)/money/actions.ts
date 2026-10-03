@@ -23,6 +23,8 @@ function accountInput(data: FormData) {
     targetAmount: optional(data, "targetAmount"),
     targetDate: optional(data, "targetDate"),
     note: optional(data, "note"),
+    icon: optional(data, "icon"),
+    categoryId: optional(data, "categoryId"),
     isPrimary: data.get("isPrimary") === "on",
   };
 }

@@ -1,13 +1,31 @@
 import Link from "next/link";
-import { AppIcon } from "@/components/ui/icons";
-import { SectionHeader } from "@/components/ui/section-header";
-import { formatMoney } from "@/lib/money";
+import { FinanceModule, MoneyAccountKind, Prisma } from "@prisma/client";
+
+import { CosmetologyCabinet } from "@/components/cosmetology-cabinet";
+import { todayInputValue } from "@/lib/dates";
+import { formatMoney, minorUnitsToMoney } from "@/lib/money";
+import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/server/auth";
-import { getCosmetologyDashboard, getCosmetologyOperations } from "@/server/cosmetology";
+import { getCosmetologyAppointments, getCosmetologyDashboard } from "@/server/cosmetology";
+import { getMoneyWorkspace } from "@/server/money";
 
 export default async function CosmetologyPage() {
   const user = await requireUser();
-  const [dashboard, operations] = await Promise.all([getCosmetologyDashboard(user.id), getCosmetologyOperations(user.id)]);
-  const scheduled = operations.appointments.filter((item) => item.status === "SCHEDULED");
-  return <><header className="page-header"><div><p className="eyebrow">Косметология</p><h1>Мой кабинет</h1><p className="muted">Записи, клиенты, сертификаты, товары и финансы.</p></div><Link className="button primary" href="/cosmetology/visits">＋ Запись</Link></header><section className="metric-grid family-summary"><article><span>Наличные</span><strong>{formatMoney(operations.balances.CASH)}</strong></article><article><span>Monobank</span><strong>{formatMoney(operations.balances.MONO)}</strong></article><article><span>ПриватБанк</span><strong>{formatMoney(operations.balances.PRIVAT)}</strong></article><article><span>Прочие</span><strong>{formatMoney(operations.balances.OTHER)}</strong></article></section><section className="poultry-section-grid"><Link href="/cosmetology/visits" className="poultry-section-card"><AppIcon name="sales"/><b>Календарь</b><span>{scheduled.length} активных записей</span></Link><Link href="/cosmetology/cash" className="poultry-section-card"><AppIcon name="money"/><b>Касса за день</b><span>Поступления: {formatMoney(dashboard.report.income)}</span></Link><Link href="/cosmetology/certificates" className="poultry-section-card"><AppIcon name="money"/><b>Сертификаты</b><span>Номиналы и история списаний</span></Link><Link href="/cosmetology/clients" className="poultry-section-card"><AppIcon name="projects"/><b>Клиенты</b><span>{dashboard.clients.length} в базе · должны: {operations.debts.length}</span></Link><Link href="/cosmetology/inventory" className="poultry-section-card"><AppIcon name="feed"/><b>Товары и препараты</b><span>{operations.lowStock.length ? `Заканчиваются: ${operations.lowStock.length}` : `${dashboard.items.length} поз. на складе`}</span></Link></section><SectionHeader eyebrow="Записи" title="Ближайшие клиенты" action={<Link href="/cosmetology/visits" className="text-link">Все записи</Link>}/><div className="transaction-list">{scheduled.slice(0, 5).map((visit) => <Link href={`/cosmetology/visits/${visit.id}`} className="transaction-row" key={visit.id}><span><b>{visit.procedureName}</b><small>{visit.client.displayName ?? `${visit.client.lastName} ${visit.client.firstName}`} · {visit.operationDate.toLocaleDateString("ru-RU")}</small></span><strong>Закрыть →</strong></Link>)}{!scheduled.length && <p className="empty">Нет активных записей.</p>}</div></>;
+  const today = todayInputValue();
+  const [month, daily, appointments, money] = await Promise.all([
+    getCosmetologyDashboard(user.id, "MONTH"), getCosmetologyDashboard(user.id, "TODAY"), getCosmetologyAppointments(user.id), getMoneyWorkspace(user.id, FinanceModule.COSMETOLOGY),
+  ]);
+  const procurementEnvelope = money.accounts.find((account) => account.kind === MoneyAccountKind.ENVELOPE && account.isActive && /закуп/i.test(account.name));
+  const todayStart = new Date(`${today}T00:00:00.000Z`);
+  const todayEnd = new Date(`${today}T23:59:59.999Z`);
+  const procurementToday = procurementEnvelope ? await prisma.moneyLedgerEntry.aggregate({
+    where: { accountId: procurementEnvelope.id, reversedAt: null, amount: { gt: 0 }, operationDate: { gte: todayStart, lte: todayEnd } },
+    _sum: { amount: true },
+  }) : null;
+  const todayProcurement = new Prisma.Decimal(procurementToday?._sum.amount?.toString() ?? "0");
+  const todayIncome = new Prisma.Decimal(daily.report.income);
+  const reserve = procurementEnvelope ? formatMoney(minorUnitsToMoney(procurementEnvelope.balanceMinor), procurementEnvelope.currency) : formatMoney("0");
+  const monthExpense = new Prisma.Decimal(month.report.cashExpense);
+  const currentMonthStart = new Date(`${today.slice(0, 8)}01T00:00:00.000Z`);
+  return <><header className="page-header cosmetology-cabinet-header"><div><p className="eyebrow">Косметология</p><h1>Мой кабинет</h1><p className="muted">Записи, клиенты, препараты и финансы</p></div><div className="button-row"><Link className="button secondary" href="/cosmetology/clients/new">＋ Клиент</Link><Link className="button primary" href="/cosmetology/visits">＋ Запись</Link></div></header><CosmetologyCabinet today={today} appointments={appointments.map((appointment) => ({ date: appointment.operationDate.toISOString().slice(0, 10), status: appointment.status }))} todayIncome={formatMoney(todayIncome.toString())} todayProcurement={formatMoney(todayProcurement.toString())} todayFree={formatMoney(todayIncome.sub(todayProcurement).toString())} monthIncome={formatMoney(month.report.income)} monthExpense={formatMoney(monthExpense.toString())} monthResult={formatMoney(new Prisma.Decimal(month.report.income).sub(monthExpense).toString())} reserve={reserve} reserveHref={procurementEnvelope ? "/cosmetology/procurement-reserve" : "/money?project=COSMETOLOGY#envelopes"} clients={month.clients.length} newClients={month.clients.filter((client) => client.createdAt >= currentMonthStart).length} inventoryItems={month.items.length} lowStock={month.items.filter((item) => item.currentQuantity.lte(item.minimumQuantity)).length}/></>;
 }

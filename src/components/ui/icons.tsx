@@ -1,6 +1,49 @@
-export type AppIconName = "home" | "projects" | "add" | "reports" | "settings" | "arrow" | "feed" | "flock" | "sales" | "incubation" | "expense" | "money" | "operations" | "savings" | "analytics";
+export type AppIconName = "home" | "projects" | "add" | "reports" | "settings" | "arrow" | "feed" | "flock" | "sales" | "incubation" | "expense" | "money" | "operations" | "savings" | "analytics" | "clients" | "briefcase" | "calendar" | "cash" | "bell" | "crown" | "target" | "sparkles" | "warning" | "trendUp" | "trendDown" | "lightbulb" | "search" | "filter" | "phone" | "message" | "gift" | "palette" | "shield" | "lock" | "fingerprint" | "help" | "document" | "logout" | "sun" | "moon";
+
+const paths: Record<AppIconName, string> = {
+  home: "M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19.5v-9Z M9 21v-6h6v6",
+  projects: "M4 5.5h6v6H4zM14 5.5h6v6h-6zM4 14.5h6v6H4zM14 14.5h6v6h-6z",
+  add: "M12 5v14M5 12h14",
+  reports: "M5 20V10M12 20V4M19 20v-7",
+  settings: "M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0-5.5v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4",
+  arrow: "m9 18 6-6-6-6",
+  feed: "M4 19c4-7 8-11 16-14-3 8-7 12-16 14Zm1-9c3 0 6 1 8 3",
+  flock: "M7 20c-2.5 0-4-1.8-4-4.2 0-2 1.3-3.7 3.1-4.1A5.5 5.5 0 0 1 16.8 9c2.5.1 4.2 1.8 4.2 4.3 0 3.7-3.8 6.7-8.5 6.7H7Z",
+  sales: "M4 6.5A2.5 2.5 0 0 1 6.5 4h10A2.5 2.5 0 0 1 19 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-10A2.5 2.5 0 0 1 4 17.5v-11ZM8 9h8M8 13h5",
+  incubation: "M12 3c3.7 4.3 6 7.4 6 11a6 6 0 0 1-12 0c0-3.6 2.3-6.7 6-11Zm0 15.5v.01",
+  expense: "M5 4h14l-1 16H6L5 4Zm3 0V2h8v2M9 9h6M9 13h6",
+  money: "M3 7.5h18v9H3zM16 12h.01M8 12a2 2 0 1 0 0 .01",
+  operations: "M6 5h12M6 12h12M6 19h12M3 5h.01M3 12h.01M3 19h.01",
+  savings: "M4 9.5h16v8A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-8ZM4 10l2.5-4h11l2.5 4M16 14h4",
+  analytics: "M4 20V11M10 20V5M16 20v-7M22 20H2",
+  clients: "M8.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM2.5 20v-1.5A4.5 4.5 0 0 1 7 14h3a4.5 4.5 0 0 1 4.5 4.5V20M16 4.5a3 3 0 0 1 0 6M17 14a4.5 4.5 0 0 1 4.5 4.5V20",
+  briefcase: "M3 8.5h18v10A1.5 1.5 0 0 1 19.5 20h-15A1.5 1.5 0 0 1 3 18.5v-10ZM8 8.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2.5M3 12h18M10 12v2h4v-2",
+  calendar: "M4 6.5h16v14H4zM8 3v6M16 3v6M4 10h16",
+  cash: "M12 22a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-13v6M9 12h6",
+  bell: "M6 17h12l-1.5-2.5V10a4.5 4.5 0 0 0-9 0v4.5L6 17Zm4 3h4",
+  crown: "M3 18 5 7l5 5 2-8 2 8 5-5 2 11H3Zm0 2h18",
+  target: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0-4a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0-2a3 3 0 1 0 0-6 3 3 0 0 0 0 6M14 10l6-6",
+  sparkles: "m12 3 1.2 3.8L17 8l-3.8 1.2L12 13l-1.2-3.8L7 8l3.8-1.2L12 3Zm6 10 .8 2.2L21 16l-2.2.8L18 19l-.8-2.2L15 16l2.2-.8L18 13ZM5 13l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3Z",
+  warning: "M12 3 2.5 20h19L12 3Zm0 6v5m0 3v.01",
+  trendUp: "M4 17 10 11l4 4 6-8M14 7h6v6",
+  trendDown: "M4 7l6 6 4-4 6 8M14 17h6v-6",
+  lightbulb: "M9 18h6M10 21h4M8.5 14.5A6 6 0 1 1 15.5 14.5C14.6 15.3 14 16 14 18h-4c0-2-.6-2.7-1.5-3.5Z",
+  search: "m21 21-4.4-4.4M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z",
+  filter: "M4 7h16M7 12h10M10 17h4M8 5v4M16 10v4M12 15v4",
+  phone: "M7 3h3l1.2 4-2 1.4a15 15 0 0 0 6.4 6.4l1.4-2 4 1.2v3c0 2-2 4-4 4C9.3 21 3 14.7 3 7c0-2 2-4 4-4Z",
+  message: "M4 4h16v12H8l-4 4V4Zm4 5h8M8 12h5",
+  gift: "M4 10h16v11H4V10Zm-1-4h18v4H3V6Zm9 0v15m0-15H8.5a2.5 2.5 0 1 1 2.5-2.5V6Zm0 0h3.5A2.5 2.5 0 1 0 13 3.5V6Z",
+  palette: "M12 3a9 9 0 0 0 0 18h1.5a2 2 0 0 0 0-4H12a2 2 0 0 1 0-4h3a6 6 0 0 0 0 0-12h-3ZM7 10h.01M9 6.5h.01M14 6h.01M18 9h.01",
+  shield: "M12 3 4.5 6v5.5c0 4.4 3 7.8 7.5 9.5 4.5-1.7 7.5-5.1 7.5-9.5V6L12 3Zm-3 9 2 2 4-5",
+  lock: "M6 10h12v10H6V10Zm3 0V7a3 3 0 0 1 6 0v3M12 14v2",
+  fingerprint: "M7 12a5 5 0 0 1 10 0c0 4-1 7-3 9M4 12a8 8 0 0 1 16 0c0 2-.2 4-.8 6M10 12a2 2 0 0 1 4 0c0 5-1 8-3 10M7 16c.2 2-.2 4-1 5",
+  help: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Zm-3-13a3 3 0 1 1 4.3 2.7c-.8.4-1.3 1-1.3 2.3m0 3v.01",
+  document: "M6 3h8l4 4v14H6V3Zm8 0v5h4M9 12h6M9 16h6",
+  logout: "M10 4H5v16h5M14 8l4 4-4 4M8 12h10",
+  sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm0-5v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4",
+  moon: "M20 15.2A8 8 0 0 1 8.8 4 8 8 0 1 0 20 15.2Z",
+};
 
 export function AppIcon({ name }: { name: AppIconName }) {
-  const paths: Record<AppIconName, string> = { home: "M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19.5v-9Z M9 21v-6h6v6", projects: "M4 5.5h6v6H4zM14 5.5h6v6h-6zM4 14.5h6v6H4zM14 14.5h6v6h-6z", add: "M12 5v14M5 12h14", reports: "M5 20V10M12 20V4M19 20v-7", settings: "M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm0-5.5v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4", arrow: "m9 18 6-6-6-6", feed: "M4 19c4-7 8-11 16-14-3 8-7 12-16 14Zm1-9c3 0 6 1 8 3", flock: "M7 20c-2.5 0-4-1.8-4-4.2 0-2 1.3-3.7 3.1-4.1A5.5 5.5 0 0 1 16.8 9c2.5.1 4.2 1.8 4.2 4.3 0 3.7-3.8 6.7-8.5 6.7H7Z", sales: "M4 6.5A2.5 2.5 0 0 1 6.5 4h10A2.5 2.5 0 0 1 19 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-10A2.5 2.5 0 0 1 4 17.5v-11ZM8 9h8M8 13h5", incubation: "M12 3c3.7 4.3 6 7.4 6 11a6 6 0 0 1-12 0c0-3.6 2.3-6.7 6-11Zm0 15.5v.01", expense: "M5 4h14l-1 16H6L5 4Zm3 0V2h8v2M9 9h6M9 13h6", money: "M3 7.5h18v9H3zM16 12h.01M8 12a2 2 0 1 0 0 .01", operations: "M6 5h12M6 12h12M6 19h12M3 5h.01M3 12h.01M3 19h.01", savings: "M4 9.5h16v8A2.5 2.5 0 0 1 17.5 20h-11A2.5 2.5 0 0 1 4 17.5v-8ZM4 10l2.5-4h11l2.5 4M16 14h4", analytics: "M4 20V11M10 20V5M16 20v-7M22 20H2" };
-  return <svg className="app-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={paths[name]} /></svg>;
+  return <svg className="app-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={paths[name]}/></svg>;
 }

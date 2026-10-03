@@ -23,15 +23,15 @@ describe("универсальные кошельки и конверты", () =
   it("12. допускает конверт → кошелёк", () => expect(() => validateInternalAllocation(envelope({ balanceMinor: 100n }), wallet(), 100n)).not.toThrow());
   it("13. внутреннее перемещение не является Income", () => expect(migration).toContain("'TRANSFER'"));
   it("14. внутреннее перемещение не является Expense", () => expect(migration).toContain('"type" "MoneyLedgerEntryType"'));
-  it("15. зеркальные проводки не увеличивают капитал", () => {
+  it("15. резервирование в конверте не увеличивает капитал", () => {
     const before = [{ kind: "WALLET" as const, openingBalance: "50000", entries: [] }, { kind: "ENVELOPE" as const, openingBalance: "0", entries: [] }];
-    const after = [{ ...before[0], entries: [{ amount: "-10000" }] }, { ...before[1], entries: [{ amount: "10000" }] }];
+    const after = [{ ...before[0], entries: [] }, { ...before[1], entries: [{ amount: "10000" }] }];
     expect(assertAllocationKeepsCapital(before, after)).toBe(true);
   });
   it("16. отклоняет недостаток средств", () => expect(() => validateInternalAllocation(wallet({ balanceMinor: 99n }), envelope(), 100n)).toThrow("Недостаточно"));
   it("17. acceptance: 50 000 = 20 000 свободно + 30 000 распределено", () => {
     const result = summarizeProjectMoney([
-      { kind: "WALLET", openingBalance: "50000", entries: [{ amount: "-30000" }] },
+      { kind: "WALLET", openingBalance: "50000", entries: [] },
       { kind: "ENVELOPE", openingBalance: "0", entries: [{ amount: "10000" }] },
       { kind: "ENVELOPE", openingBalance: "0", entries: [{ amount: "15000" }] },
       { kind: "ENVELOPE", openingBalance: "0", entries: [{ amount: "5000" }] },

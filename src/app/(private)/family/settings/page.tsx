@@ -1,7 +1,10 @@
-import Link from "next/link";
+import { ImperiaSettings } from "@/components/imperia-settings";
+import { requireUser } from "@/server/auth";
 
-import { FamilyThemeToggle } from "@/components/family-theme-toggle";
+import { logoutAction } from "../../actions";
 
-export default function FamilySettingsPage() {
-  return <><header className="page-header"><div><Link href="/family" className="eyebrow family-home-link">← FEVORA · IMPERIA</Link><h1>Настройки IMPERIA</h1><p className="muted">My money • business • empire</p></div></header><FamilyThemeToggle/><div className="family-settings-grid"><Link href="/cosmetology/clients" className="app-card"><b>Клиенты</b><span>База клиентов, контакты и история посещений</span><em>Открыть →</em></Link><Link href="/cosmetology/procedures" className="app-card"><b>Услуги</b><span>Стоимость, длительность и расход материалов</span><em>Открыть →</em></Link><Link href="/cosmetology/inventory" className="app-card"><b>Препараты и расходники</b><span>Создание позиций, закупки, остатки и себестоимость</span><em>Открыть →</em></Link><Link href="/family/categories" className="app-card"><b>Финансовые категории</b><span>Создание, иконки, порядок и удаление</span><em>Открыть →</em></Link><Link href="/money?project=COSMETOLOGY" className="app-card"><b>Кошельки и конверты</b><span>Где находятся деньги и на какие цели они распределены</span><em>Открыть →</em></Link><Link href="/family/accounts" className="app-card"><b>Счета и способы оплаты</b><span>Наличные, карты и другие семейные счета</span><em>Открыть →</em></Link><Link href="/family/recurring" className="app-card"><b>Обязательные платежи</b><span>Расписание, пауза и история</span><em>Открыть →</em></Link></div></>;
+export default async function FamilySettingsPage() {
+  const user = await requireUser();
+  const loyaltyConnected = Boolean(process.env.BOT_CLIENT_API_URL?.trim() && process.env.BOT_CLIENT_API_SECRET?.trim());
+  return <ImperiaSettings user={{ name: user.name, email: user.email, timezone: user.timezone, currency: user.defaultCurrency }} loyaltyConnected={loyaltyConnected} logoutAction={logoutAction}/>;
 }

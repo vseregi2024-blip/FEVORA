@@ -10,11 +10,12 @@ export function LoginForm() {
   const [state, action, pending] = useActionState(loginAction, initialState);
   return (
     <form action={action} className="auth-form">
-      <label>Ім&apos;я <span className="muted">(лише під час першого входу)</span><input name="name" autoComplete="name" /></label>
-      <label>Email<input name="email" type="email" required autoComplete="email" /></label>
-      <label>Пароль<input name="password" type="password" required minLength={8} autoComplete="current-password" /></label>
+      <label>
+        Код доступа
+        <input name="pin" type="password" required inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete="current-password" placeholder="••••••" />
+      </label>
       {state.error && <p className="form-error" role="alert">{state.error}</p>}
-      <button className="button primary" disabled={pending}>{pending ? "Перевіряємо…" : "Увійти"}</button>
+      <button className="button primary" disabled={pending}>{pending ? "Открываем…" : "Войти"}</button>
     </form>
   );
 }

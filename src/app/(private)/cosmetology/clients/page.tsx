@@ -1,5 +1,11 @@
-import Link from "next/link";
-import { EmptyState } from "@/components/ui/empty-state";
+import { ImperiaClients } from "@/components/imperia-clients";
 import { requireUser } from "@/server/auth";
 import { getCosmetologyClients } from "@/server/cosmetology";
-export default async function ClientsPage({searchParams}:{searchParams:Promise<{q?:string}>}){const u=await requireUser(),p=await searchParams,clients=await getCosmetologyClients(u.id,p.q??"");return <><header className="page-header"><div><p className="eyebrow">IMPERIA · Клиенты</p><h1>Клиентская база</h1><p className="muted">Поиск по имени или последним четырём цифрам телефона.</p></div><Link className="button primary" href="/cosmetology/clients/new">＋</Link></header><form className="filters" action="/cosmetology/clients"><input name="q" type="search" placeholder="Имя или телефон" defaultValue={p.q}/><button className="button secondary">Найти</button></form><div className="transaction-list">{clients.map(c=><Link className="transaction-row" href={`/cosmetology/clients/${c.id}`} key={c.id}><span><b>{c.displayName??`${c.firstName} ${c.lastName}`.trim()}</b><small>{c.phone} · {c.status==="VIP"?"VIP":c.status==="REGULAR"?"Постоянный":c.status==="POTENTIAL"?"Потенциальный":c.status==="INACTIVE"?"Не возвращается":"Новый"}</small></span><strong>Открыть →</strong></Link>)}</div>{!clients.length&&<EmptyState title="Клиентов пока нет" description="Добавьте первого клиента или создайте его прямо в процедуре."/>}</>}
+
+export default async function ClientsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const user = await requireUser();
+  const params = await searchParams;
+  const query = params.q?.trim() ?? "";
+  const clients = await getCosmetologyClients(user.id, query);
+  return <ImperiaClients clients={clients} query={query}/>;
+}

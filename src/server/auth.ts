@@ -63,6 +63,28 @@ export async function requireUser() {
   return user;
 }
 
+/**
+ * Local single-owner access is deliberately available only while developing on
+ * this computer. Production keeps the regular account/password boundary.
+ */
+export async function authenticateLocalPin(pin: string) {
+  if (process.env.NODE_ENV === "production") {
+    return { error: "Локальный PIN-вход доступен только в локальной версии." };
+  }
+
+  if (!/^\d{6}$/.test(pin)) {
+    return { error: "Введите шестизначный код." };
+  }
+
+  const users = await prisma.user.findMany({ take: 2, orderBy: { createdAt: "asc" } });
+  if (users.length !== 1) {
+    return { error: "Не найден единственный локальный профиль. Обратитесь к настройке приложения." };
+  }
+
+  await setSession(users[0].id);
+  return { user: users[0] };
+}
+
 export async function authenticateOwner(email: string, password: string, name?: string) {
   const normalizedEmail = email.trim().toLowerCase();
   const userCount = await prisma.user.count();

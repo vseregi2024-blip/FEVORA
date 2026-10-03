@@ -6,7 +6,7 @@ const migration = readFileSync(new URL("../prisma/migrations/20260904103000_fami
 const service = readFileSync(new URL("../src/server/family.ts", import.meta.url), "utf8");
 const actions = readFileSync(new URL("../src/app/(private)/family/actions.ts", import.meta.url), "utf8");
 const analytics = readFileSync(new URL("../src/app/(private)/family/analytics/page.tsx", import.meta.url), "utf8");
-const settings = readFileSync(new URL("../src/app/(private)/family/settings/page.tsx", import.meta.url), "utf8");
+const settingsView = readFileSync(new URL("../src/components/imperia-settings.tsx", import.meta.url), "utf8");
 const theme = readFileSync(new URL("../src/components/family-theme-toggle.tsx", import.meta.url), "utf8");
 
 describe("Family mobile v2 contract", () => {
@@ -19,7 +19,7 @@ describe("Family mobile v2 contract", () => {
 
   it("keeps account links nullable so old operations stay valid", () => {
     expect(schema).toMatch(/familyAccountId\s+String\?/);
-    expect(schema).toContain("targetDate   DateTime?");
+    expect(schema).toMatch(/targetDate\s+DateTime\?/);
   });
 
   it("validates account ownership before writing financial records", () => {
@@ -50,13 +50,13 @@ describe("Family mobile v2 contract", () => {
   });
 
   it("keeps infrequent directories in a separate Family settings screen", () => {
-    expect(settings).toContain('/family/categories');
-    expect(settings).toContain('/family/accounts');
-    expect(settings).toContain('/family/recurring');
+    expect(settingsView).toContain('/family/categories');
+    expect(settingsView).toContain('/family/accounts');
+    expect(settingsView).toContain('/family/recurring');
   });
 
   it("offers persistent dark and light Family palettes", () => {
-    expect(settings).toContain("FamilyThemeToggle");
+    expect(settingsView).toContain("FamilyThemeToggle");
     expect(theme).toContain("fevora-family-theme");
     expect(theme).toContain('"dark" | "light"');
   });

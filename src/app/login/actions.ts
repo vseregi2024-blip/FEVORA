@@ -3,25 +3,19 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { authenticateOwner } from "@/server/auth";
+import { authenticateLocalPin } from "@/server/auth";
 
 export type LoginState = { error?: string };
 
-const credentialsSchema = z.object({
-  email: z.string().email("Вкажіть коректний email."),
-  password: z.string().min(8, "Пароль має містити щонайменше 8 символів."),
-  name: z.string().trim().max(80).optional(),
+const pinSchema = z.object({
+  pin: z.string().regex(/^\d{6}$/, "Введите шестизначный код."),
 });
 
 export async function loginAction(_: LoginState, formData: FormData): Promise<LoginState> {
-  const parsed = credentialsSchema.safeParse({
-    email: formData.get("email"),
-    password: formData.get("password"),
-    name: formData.get("name") || undefined,
-  });
+  const parsed = pinSchema.safeParse({ pin: formData.get("pin") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Перевірте дані." };
 
-  const result = await authenticateOwner(parsed.data.email, parsed.data.password, parsed.data.name);
+  const result = await authenticateLocalPin(parsed.data.pin);
   if ("error" in result) return { error: result.error };
-  redirect("/dashboard");
+  redirect("/family");
 }

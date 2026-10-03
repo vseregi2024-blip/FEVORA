@@ -5,10 +5,10 @@ const navigation = readFileSync(new URL("../src/components/mobile-bottom-navigat
 
 describe("IMPERIA mobile navigation", () => {
   it("uses the five-destination IMPERIA panel", () => {
-    expect(navigation).toContain('["/family", "Касса"');
+    expect(navigation).toContain('["/family", "Дом"');
     expect(navigation).toContain('["/cosmetology/clients", "Клиенты"');
     expect(navigation).toContain('["#imperia-actions", "Добавить"');
-    expect(navigation).toContain('["/family/analytics", "Финансы"');
+    expect(navigation).toContain('["/safe", "Сейф"');
     expect(navigation).toContain('["/family/settings", "Настройки"');
   });
 

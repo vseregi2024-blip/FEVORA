@@ -4,6 +4,7 @@
 
 **FUNCTIONAL CORE STABLE.**
 **NEXT PHASE: UI/UX REDESIGN.**
+**UI-G IMPERIA SETTINGS COMPLETE. STOP BEFORE INTERNAL PROJECT SCREENS.**
 **DESIGN TASK EXISTS SEPARATELY.**
 **DO NOT REBUILD BUSINESS LOGIC.**
 
@@ -818,3 +819,546 @@ C2.1A затем проверил весь authenticated production visit list �
 - The only completed visit is `cmtwk2glz0005pl4xaht37vtp`, client Швец Надя / loyaltyClientId `39`, procedure «чистка», date 2026-09-11, cost `1000`, paid `1000`, remaining `0` UAH. It has one existing CASH PaymentComponent for `1000` and no BONUS redemption shown. The same-day verified B1 profile balance remains `100`.
 - It is not a candidate because `remainingAmount > 0` is false. Therefore: «Безопасного COMPLETED неоплаченного визита для C2.1 нет».
 - No status, Payment, PaymentComponent, redemption, externalEventId, bonus balance, flag, visit or production data was changed; no B3 POST was sent. STOP and wait for a separate instruction.
+
+### 2026-09-17 — UI-0 frontend audit complete; STOP before UI-A
+
+- Read the full continuity and functional handoff, then audited the current frontend routes, root/private layouts, desktop and mobile navigation, shared UI components, IMPERIA/family components, global CSS, family CSS and relevant CSS modules.
+- Created `FEVORA_IMPERIA_UI_REDESIGN_PLAN.md` with the current route/layout/navigation/style inventory, the mapping for Home, Clients, Projects, Calendar, Cash, Finance and Settings, reuse candidates, design-system gaps and the proposed staged redesign sequence.
+- Saved all seven owner-supplied PNG references under `design-references/fevora-imperia-ui-redesign/`; the two settings images are byte-identical and both were preserved with explicit filenames.
+- No TS/TSX, CSS, backend, server action, API, Prisma, migration, Payment 2.0, certificate, bonus, Beauty Bonus Club or financial business-logic file was changed. No tests/build were required because this stage added documentation and unchanged binary references only.
+- No production request, database access, migration, deployment, payment, redemption, refund, reversal or data write occurred.
+- The pre-existing untracked `src/app/(private)/family/accounts/page 2.tsx` remains untouched.
+- STOP: wait for explicit owner permission before UI-A — Design System. Do not change the interface before that permission.
+
+### 2026-09-17 — UI-A design system and common IMPERIA shell complete; STOP before UI-B
+
+- Owner explicitly approved UI-A and confirmed the seven saved PNGs as the master visual references for palette, gradients, dark background, glass cards, glow, typography, top quick sections, bottom navigation and overall visual character.
+- Added `src/app/imperia-design-system.css` with dark graphite/navy/violet tokens, the approved `#8138FF → #C936E7 → #F447A2 → #FF7A3D` brand gradient, semantic success/warning/danger/info colors, typography, spacing, radii, borders, shadows, glow, form controls, skeleton/shimmer states and explicit 430/390/375 px rules.
+- Added reusable primitives in `src/components/ui/imperia.tsx`: cards, stat/quick/progress/project cards, section header, badge, gradient button, icon circle and loading/empty/error states. Extended the existing SVG icon system without adding a dependency.
+- Added `ImperiaAppShell` and `TopQuickNavigation` for `/family/*`, `/cosmetology/*` and `/projects`: real React/CSS header, crown/wordmark/tagline, notification marker, profile initial and the approved Clients/Projects/Calendar/Cash quick sections. No reference image is embedded in the UI.
+- Unified the IMPERIA bottom navigation labels/routes as Home, Clients, Add, Finance and Settings; the raised central add action and all existing action-sheet destinations remain intact. `/projects` now retains the same IMPERIA shell/navigation.
+- Replaced the private generic loading/error presentation with reusable finite skeleton/error states; no data loading or error recovery behavior changed.
+- UI-A changed only presentation/layout components, icons, loading/error presentation and relevant UI contract tests. No page content was redesigned; Home and every screen-specific redesign remain unstarted.
+- Verification: TypeScript PASS; relevant Vitest 4 files / 16 tests PASS; production build PASS; ESLint 0 errors with the same 3 pre-existing `<img>` warnings.
+- Isolated local shell render at 375/390/430 px PASS: document/body horizontal overflow 0 at all widths, four quick-navigation columns remain visible, and the smallest bottom-navigation touch target is 58 px. Screenshots were generated only in `/private/tmp`; no production/browser data was accessed.
+- No backend, server action, API, database, Prisma, migration, Payment 2.0, certificate, BONUS, Beauty Bonus Club, finance calculation, production data or deployment changed. The pre-existing `src/app/(private)/family/accounts/page 2.tsx` remains untouched.
+- STOP: wait for explicit owner approval of UI-A before UI-B — Home screen. Do not redesign Home or any later screen without that approval.
+
+### 2026-09-17 — UI-B IMPERIA Home screen complete; STOP before UI-C Clients
+
+- Owner explicitly approved proceeding to UI-B and reconfirmed `ChatGPT Image 17 сент. 2026 г., 15_50_35.png` as the required first-screen composition and visual target.
+- Replaced the `/family` presentation with the approved Home hierarchy: real IMPERIA shell and four quick sections, Capital, Goals, Analytics, Idea of day and the persistent bottom navigation. The reference PNG is not embedded in the application; the screen is implemented with React, CSS and the existing SVG icon system.
+- Added `src/components/imperia-home.tsx` and extended `src/app/imperia-design-system.css` with responsive Home cards, progress states, analytics bars and a CSS-built sunrise/mountain illustration. Added `trendUp`, `trendDown` and `lightbulb` to the existing icons.
+- Home uses existing server-side financial sources: `getFamilyAnalytics`, `getFamilyTransactions` and `getSavingsGoals`. Capital is calculated by the same existing balance formula; goals, percentages, income, expenses, result and expense categories are real values. No mock production amounts were added to application code.
+- Existing destinations are preserved: Capital → `/money`, Goals → `/family/savings`, detailed analytics → `/family/analytics`; period selection uses existing `/family?period=...` behavior.
+- Verification: `git diff --check` PASS; TypeScript PASS; focused Vitest 4 files / 24 tests PASS; production build PASS; ESLint 0 errors with the same 3 pre-existing unrelated `<img>` warnings.
+- Isolated local Home render at 375/390/430 px PASS: document/body horizontal overflow 0, Capital width stays within every viewport, and the smallest bottom-navigation touch target is 58 px. Screenshots are only in `/private/tmp`; this QA fixture did not access production or database data.
+- No backend, server action, API, database, Prisma schema/migration, Payment 2.0, certificate, BONUS, Beauty Bonus Club, finance calculation, production data or deployment changed. The pre-existing untracked `src/app/(private)/family/accounts/page 2.tsx` remains untouched.
+- STOP: wait for explicit owner approval of the Home screen before UI-C — Clients. Do not redesign Clients or any later screen without that approval.
+
+### 2026-09-17 — UI-B Home mobile-scale correction after owner review
+
+- Owner rejected the initial UI-B preview because it was a long full-page render and did not match the approved one-screen mobile composition. That preview must not be used as an approval reference.
+- Reworked the mobile Home density and hierarchy against the approved master: compact header, four equal quick cards, Capital with right-side result/open control and progress caption, compact Goals, three-column Analytics, Idea of day and a larger rounded fixed navigation bar.
+- Added an explicit iPhone 17 Pro Max target: `440 × 956` CSS px, DPR `3`, native screenshot `1320 × 2868`, plus `env(safe-area-inset-top/right/bottom/left)` handling. QA now captures the viewport itself rather than a full-page screenshot.
+- Exact iPhone 17 Pro Max viewport QA PASS: `440 × 956`, DPR 3, horizontal overflow 0, navigation targets 64 px. Adjacent 375/390/430 widths also have horizontal overflow 0.
+- Reverification after correction: TypeScript PASS; 4 focused files / 24 Vitest tests PASS; production build PASS; ESLint 0 errors with the same 3 unrelated pre-existing `<img>` warnings; `git diff --check` PASS.
+- UI-only correction. No backend, API, database, Prisma, migration, payment, certificate, bonus, Beauty Bonus Club, financial calculation, production data or deployment changed.
+- STOP remains before UI-C — Clients; wait for explicit owner approval of the corrected Home screen.
+
+### 2026-09-17 — Corrected UI-B Home approved
+
+- Owner reviewed the corrected iPhone 17 Pro Max render and explicitly approved it with «да отлично».
+- UI-B is complete and approved. STOP before UI-C — Clients; begin UI-C only after a separate explicit instruction.
+
+### 2026-09-17 — UI-C Clients complete; STOP before UI-D Calendar
+
+- Owner explicitly approved beginning UI-C after approving the corrected Home screen.
+- Rebuilt `/cosmetology/clients` in the approved IMPERIA client-screen composition: active Clients quick card, real search, result/total counter, client list heading, new-client action, neon glass client cards, initials, real contacts, statuses, sources/marks, created date, phone action and profile action.
+- Added reusable `src/components/imperia-clients.tsx`. Search still uses the existing `getCosmetologyClients` server query and existing `q` URL parameter; no data source, query behavior or client action changed.
+- Restyled the existing `/cosmetology/clients/[id]` and `/cosmetology/clients/new` surfaces through scoped UI-C classes. Client editing, treatment plans, history, anamnesis, Beauty Bonus Club linking/history and client creation remain present and wired to the same actions.
+- Added search/filter/phone/message/gift glyphs to the existing SVG icon system without adding a dependency. The reference PNG is not embedded in the application.
+- Exact iPhone 17 Pro Max viewport QA PASS at `440 × 956`, DPR 3: horizontal overflow 0, bottom-navigation targets 64 px and search control 46 px. The 375/390/430 checks also have horizontal overflow 0 and the same passing target sizes. Screenshot: `/private/tmp/fevora-ui-c-440.png`.
+- Verification: TypeScript PASS; 5 focused test files / 43 tests PASS; UI-C contract 4/4 PASS; production build PASS; ESLint 0 errors with the same 3 unrelated pre-existing `<img>` warnings; `git diff --check` PASS.
+- No backend, server action, API, database, Prisma schema/migration, Payment 2.0, certificate, BONUS, Beauty Bonus Club logic, finance calculation, production data or deployment changed. The pre-existing untracked `src/app/(private)/family/accounts/page 2.tsx` remains untouched.
+- STOP: wait for explicit owner approval of UI-C before UI-D — Calendar. Do not redesign Calendar or any later screen without that approval.
+
+### 2026-09-17 — UI-C correction: explicit client finder
+
+- Owner requested an unmistakable client-search section instead of an icon-only search control.
+- Added a dedicated «Найти клиента» module with instructions, an explicit «Фамилия или номер телефона» field, a labeled gradient «Найти» button and a «Сбросить» action after a query.
+- The existing server search behavior is unchanged and already covers display name, first/last name, full phone, contact value and the last four phone digits; results continue to render in the client list below.
+- Corrected iPhone 17 Pro Max viewport render: `/private/tmp/fevora-ui-c-440.png`. QA at 375/390/430/440 px remains free of horizontal overflow; search target is 46 px and bottom navigation targets are 64 px.
+- Reverification: TypeScript PASS; UI-C/loyalty focused tests 7/7 PASS; production build PASS; ESLint 0 errors with the same 3 unrelated pre-existing warnings.
+- STOP remains before UI-D — Calendar; wait for owner approval of this UI-C correction.
+
+### 2026-09-17 — UI-D Calendar complete; STOP before UI-E Cash
+
+- Owner approved moving from Clients to UI-D Calendar.
+- Rebuilt `/cosmetology/visits` in the approved IMPERIA calendar language while preserving the existing appointment source and create action. The page now opens in Month view and supports explicit Month, Day, Week and List modes.
+- Added the approved hierarchy: Calendar hero, period controls, 42-day month grid with selected/today states and appointment-status dots, nearest three scheduled appointments, selected-day agenda, timeline views and scheduled/archive list.
+- Preserved appointment links, client/template options, new-client fallback, date/time/duration, prepayment components and `createCosmetologyAppointmentAction`. Restyled the existing create-booking dialog; no form field or payment behavior was removed.
+- Status presentation covers `SCHEDULED`, `COMPLETED`, `CANCELLED` and `NO_SHOW` without changing status semantics or mutations.
+- Exact iPhone 17 Pro Max viewport QA PASS at `440 × 956`, DPR 3: horizontal overflow 0, bottom-navigation targets 64 px and month-day touch targets 44 px. The same gates pass at 375/390/430 px. Screenshot: `/private/tmp/fevora-ui-d-440.png`.
+- Verification: TypeScript PASS; 4 focused test files / 30 tests PASS; UI-D contract 4/4 PASS; production build PASS; ESLint 0 errors with the same 3 unrelated pre-existing `<img>` warnings; `git diff --check` PASS.
+- No backend, server action, API, database, Prisma schema/migration, Payment 2.0, certificate, BONUS, Beauty Bonus Club logic, finance calculation, production data or deployment changed. The pre-existing untracked `src/app/(private)/family/accounts/page 2.tsx` remains untouched.
+- STOP: wait for explicit owner approval of UI-D before UI-E — Cash. Do not redesign Cash or any later screen without that approval.
+
+### 2026-09-17 — UI-E Cash complete; STOP before UI-F Finance / Projects
+
+- Owner approved the Calendar and explicitly authorised UI-E Cash.
+- Rebuilt `/cosmetology/cash` with reusable `src/components/imperia-cash.tsx` on top of the unchanged validated `cashReportSchema` and `getCosmetologyCashReport` data source.
+- The screen now presents the selected day/period and total real monetary receipts, four monetary methods (`CASH`, `MONOBANK`, `PRIVATBANK`, `OTHER`), quick Today/Yesterday/custom-period controls, method filters and linked payment-component operations.
+- Certificates and bonuses are shown in an explicit separate «Неденежное погашение» panel labelled «Не увеличивает кассу». They are not included in the monetary hero total or monetary method cards; existing Payment 2.0 accounting semantics remain unchanged.
+- Exact iPhone 17 Pro Max viewport QA PASS at `440 × 956`, DPR 3: horizontal overflow 0, bottom-navigation targets 64 px and cash filter targets 44 px. The same gates pass at 375/390/430 px. Screenshot: `/private/tmp/fevora-ui-e-440.png`.
+- Verification: TypeScript PASS; 5 focused payment/certificate/bonus/UI-E test files / 31 tests PASS; UI-E contract 4/4 PASS; production build PASS; ESLint 0 errors with the same 3 unrelated pre-existing `<img>` warnings; `git diff --check` PASS.
+- No backend, server action, API, database, Prisma schema/migration, Payment 2.0, certificate, BONUS, Beauty Bonus Club logic, finance calculation, production data or deployment changed. The pre-existing untracked `src/app/(private)/family/accounts/page 2.tsx` remains untouched.
+- STOP: wait for explicit owner approval of UI-E before UI-F — Finance / Projects. Do not redesign Finance, Projects or any later screen without that approval.
+
+### 2026-09-17 — UI-F Finance / Projects complete; STOP before UI-G Settings
+
+- Owner approved moving from Cash to UI-F Finance / Projects.
+- Rebuilt `/money` in the approved FEVORA IMPERIA language: real overall capital, active-project wallet and envelope totals, internal-transfer action, five real project balances, incoming/outgoing transfer totals, existing legacy income/expense/result summaries, wallet and envelope lists, archive and all existing create/detail/history links.
+- Rebuilt `/projects` as the matching five-project launcher for Family, Poultry, Goods, Infobusiness and Cosmetology. The bottom Finance destination now opens `/money`; `/money` and its child routes use the shared IMPERIA shell and bottom navigation.
+- Presentation uses only the existing `getMoneyProjects`, `getMoneyWorkspace`, `getMoneyOverview` and `getInternalTransfer` results. No server money calculations, Prisma schema, migrations, database, Payment 2.0, certificates, bonuses, Beauty Bonus Club or production state changed.
+- Added scoped UI-F styles and `tests/imperia-finance-ui-f.test.ts`. Exact viewport QA at 375×812, 390×844, 430×932 and iPhone 17 Pro Max 440×956 passed with zero document horizontal overflow, 64px bottom-navigation targets and all five project cards visible in one row. Reference screenshot: `/private/tmp/fevora-ui-f-440.png`.
+- Verification: TypeScript PASS; production build PASS; ESLint 0 errors with the same 3 unrelated pre-existing `<img>` warnings; full suite 326 tests after updating the existing finance-navigation contract; `git diff --check` PASS.
+- STOP: wait for explicit owner approval of UI-F before UI-G — Settings. Do not redesign Settings or any later screen without that approval.
+
+### 2026-09-17 — UI-G Settings complete; STOP before internal project screens
+
+- Owner approved UI-F and explicitly authorised UI-G Settings.
+- Rebuilt `/family/settings` in the approved FEVORA IMPERIA composition: authenticated-user profile, appearance, notifications status, security status, application sections, Beauty Bonus Club integration status, system settings, existing money-management route and logout.
+- Preserved all existing settings destinations for projects, financial categories, family accounts/payment methods, recurring payments, cosmetology services and inventory. Profile details remain read-only because no profile-update backend exists; notifications and biometric login are truthfully marked as unconfigured instead of presenting fake working controls.
+- Extended the existing device-local theme selector with a real System preference that follows `prefers-color-scheme`; Dark and Light remain supported. Beauty Bonus Club status is derived only from the presence of its existing integration configuration and no remote write or integration-logic change occurs.
+- No Prisma schema, migration, database, Payment 2.0, certificates, bonuses, loyalty transactions, financial calculations or production state changed.
+- Added scoped UI-G styles and `tests/imperia-settings-ui-g.test.ts`. Exact viewport QA at 375×812, 390×844, 430×932 and iPhone 17 Pro Max 440×956 passed with zero horizontal overflow and 64px navigation/theme targets. Reference screenshot: `/private/tmp/fevora-ui-g-440.png`.
+- Verification: TypeScript PASS; 35 test files / 330 tests PASS; production build PASS; ESLint 0 errors with the same 3 unrelated pre-existing `<img>` warnings; `git diff --check` PASS.
+- STOP: wait for explicit owner approval of UI-G. Do not begin internal project screens until the owner chooses and authorises the next project block.
+
+### 2026-09-17 — Added to redesign roadmap: login screen
+
+- Owner asked to add a separate redesign of `/login` based on the approved FEVORA IMPERIA dark neon-glass visual system after seeing the current light login form locally.
+- The task is recorded in `FEVORA_IMPERIA_UI_REDESIGN_PLAN.md`; it is not started. It must preserve authentication, first-login behaviour, validation, sessions/cookies and redirects, and must not change `src/server/auth.ts`, database, Prisma, secrets or production without a separate explicit instruction.
+- Current STOP remains unchanged: await owner approval of UI-G and a choice of the next authorised screen block.
+
+### 2026-09-17 — Client birthday-entry usability correction
+
+- Owner reported that the calendar-only date-of-birth field in `/cosmetology/clients/new` required scrolling month by month through many years.
+- Updated the reusable `ImperiaDateField` only for its `birthDate` mode: an optional birthday can now be typed directly as `дд.мм.гггг`; the calendar remains an optional secondary picker.
+- The component validates real calendar dates, rejects future birthdays and continues submitting the unchanged hidden `YYYY-MM-DD` value expected by the existing client action and server schema. The same improved control is used when editing an existing client profile.
+- Verification: TypeScript PASS; focused UI-C test suite 5/5 PASS; `git diff --check` PASS; manual local-browser check PASS with `02.09.1990` entered in the New Client form.
+- No server action, API, database, Prisma schema/migration, Payment 2.0, certificate, bonus, Beauty Bonus Club, financial calculation, production data or deployment changed.
+
+### 2026-09-17 — Client internal screens: mobile interaction correction
+
+- Owner reported that `/cosmetology/clients/new` and an existing client profile still looked like a wide, legacy browser form rather than the approved mobile application.
+- Constrained these internal client flows to a mobile-width IMPERIA composition even when viewed in a wide local browser. The new-client form is now one vertical task flow rather than a desktop two-column layout.
+- Rebuilt the existing-client surface as a compact client overview with separate action cards for client data, treatment plan and Beauty Bonus Club. Each action opens its own mobile bottom-sheet dialog; editing, plan creation, loyalty access and anamnesis remain wired to their original existing actions/components.
+- Corrected the global IMPERIA checkbox sizing override so special marks use normal mobile checkbox controls rather than oversized form fields.
+- Local visual verification PASS: the client profile and its «Данные клиента» sheet render as a single-width mobile flow; TypeScript PASS; focused UI-C test suite 5/5 PASS; `git diff --check` PASS.
+- No server action, API, database, Prisma schema/migration, Payment 2.0, certificate, bonus, Beauty Bonus Club calculation/logic, financial calculation, production data or deployment changed.
+
+### 2026-09-17 — Client special-marks compact picker
+
+- Owner requested that «Особые отметки» not render as a long checkbox sheet inside the client editing window.
+- Replaced it with a compact expandable multi-select control. In its collapsed state it shows only the heading and selected values (or «Не выбраны»); the existing checkbox inputs are revealed only when the control is opened.
+- Existing `specialMarks` form names, values and update action are unchanged, so mark persistence and server-side semantics remain intact.
+- Verification: TypeScript PASS; focused UI-C test suite 6/6 PASS; local browser verification PASS; `git diff --check` PASS. No backend, database, Prisma, payment, loyalty, production or GitHub change.
+
+### 2026-09-17 — Client profile: remove duplicate content and action labels
+
+- Owner requested a shorter client screen: no repeated client name, no separate «Открыть карточку / план / программу» button labels, and history must open as a window on tap.
+- Removed the duplicate page header. The profile now has one client identity card, compact metrics and four direct-tap cards: data/preferences, plan procedures, Beauty Bonus Club and procedure history.
+- Each complete card is the control that opens its corresponding sheet; history now uses the same sheet pattern. All underlying forms, links, loyalty functionality and data remain unchanged.
+- Local visual verification PASS: the profile shows a single identity, no duplicated CTA labels and four compact direct-tap cards. TypeScript PASS; focused UI-C test suite 6/6 PASS; `git diff --check` PASS. No backend, database, Prisma, payments, loyalty logic, production or GitHub change.
+
+### 2026-09-17 — Client profile: remove all repeated card summaries
+
+- Owner asked for the profile launcher to show only essential section names, without repeated status/empty-state/detail wording.
+- The launcher now shows only «Карточка клиента», «План процедур», «Программа лояльности / Beauty Bonus Club» and «История процедур» plus their tap affordances. Birth date, plan availability, loyalty availability, visit-history summaries and the duplicate data/preference label have moved out of the launcher.
+- The detail content remains inside the respective sheets. Local visual verification PASS; TypeScript PASS; focused UI-C test suite 6/6 PASS; `git diff --check` PASS. No backend, database, Prisma, payment, loyalty logic, production or GitHub change.
+
+### 2026-09-17 — Client profile: wide-screen visual alignment
+
+- Owner noted that the 480px client-profile column looked detached below the four equal top navigation cards in a wide browser preview.
+- On desktop widths only, the client identity and metrics now span the same visual width as the top navigation, while the four direct-tap internal cards form one equal four-card row. The profile no longer appears as a narrow centred insert.
+- At iPhone 17 Pro Max/mobile widths the existing one-column 440px-oriented flow remains unchanged.
+- Local wide-browser visual verification PASS; TypeScript PASS; `git diff --check` PASS. No backend, database, Prisma, payment, loyalty logic, production or GitHub change.
+
+### 2026-09-17 — Client profile v2 approved direction and implemented locally
+
+- Owner approved replacing the launcher-like client screen with the supplied profile-first reference composition, to be recreated in the approved dark FEVORA IMPERIA system rather than copied as an image.
+- Rebuilt `/cosmetology/clients/[id]` as a real-data profile: title/back navigation, identity header with direct phone/contact/booking actions, basic contacts with edit sheet, last/next visit cards, latest-procedure history, payments summary, client notes, treatment plan and Beauty Bonus Club access.
+- All content is derived from the existing `getCosmetologyClient` result. Edit, treatment-plan creation, anamnesis, visit links, loyalty card and booking link preserve existing actions/routes and no fake client events or payment values were introduced.
+- Local visual verification PASS; TypeScript PASS; focused UI-C tests 6/6 PASS; `git diff --check` PASS. No backend, API, database, Prisma schema/migration, Payment 2.0, certificates, bonuses, Beauty Bonus Club logic, financial calculation, production data, deployment or GitHub change.
+
+### 2026-09-18 — Client profile: generated-reference composition reproduced
+
+- Owner clarified that the supplied client-profile image is a generated design target to reproduce, not an application screenshot merely to take inspiration from.
+- Reworked the individual client route into a dedicated 480px reference-style mobile surface: it hides the general IMPERIA header/quick tiles for this route, adds the compact status/brand/title arrangement, light profile cards, identity/quick actions, core details, visit cards, history, payments, notes and two sticky actions.
+- The interface is React/CSS, not an embedded image. Reference layout and spacing are recreated with FEVORA data; a real client photo is not fabricated, so the existing client initial is used until an actual stored photo exists.
+- Local visual verification PASS in the right-side browser; TypeScript PASS; focused UI-C tests 6/6 PASS; `git diff --check` PASS. No backend, API, database, Prisma schema/migration, Payment 2.0, certificate, bonus, Beauty Bonus Club logic, financial calculation, production data, deployment or GitHub change.
+
+### 2026-09-18 — Client profile: FEVORA typography and palette restored
+
+- Owner asked to retain the new reference-driven profile composition while replacing only its temporary light-reference font treatment and cream colours with the application's own FEVORA IMPERIA typography and approved dark neon palette.
+- Kept the reference layout, dimensions, sections and all behavior unchanged. Restored FEVORA UI typography, dark-indigo backgrounds, purple/pink/orange glows, branded controls and gradient primary bottom action.
+- Local browser verification PASS; TypeScript PASS; `git diff --check` PASS. No backend, database, Prisma, payment, loyalty logic, production or GitHub change.
+
+### 2026-09-18 — Client profile: brand header adjusted to supplied target
+
+- Owner supplied the exact desired FEVORA header treatment: left time, large glowing crown, FEVORA IMPERIA wordmark and the brand subtitle.
+- Replaced only the profile header with this React/CSS composition. All profile content, proportions, data, routes and interactions remain unchanged.
+- Local visual verification PASS; TypeScript PASS; `git diff --check` PASS. No backend, database, Prisma, payment, loyalty logic, production or GitHub change.
+
+### 2026-09-18 — Client profile: crown corrected and Home control added
+
+- Owner identified that the generic crown icon read visually like a castle rather than the supplied open three-point crown with curved base.
+- Replaced only the profile-header glyph with a dedicated inline SVG matching the supplied crown silhouette, and added an explicit accessible Home control («Вернуться в главное меню») leading to `/family`.
+- Local visual verification PASS; TypeScript PASS; `git diff --check` PASS. No backend, database, Prisma, payment, loyalty logic, production or GitHub change.
+
+### 2026-09-18 — Clients directory: approved reference composition rebuilt
+
+- Owner supplied the approved FEVORA IMPERIA Clients reference and asked that the live local Clients route reproduce it in the right-side browser.
+- Reworked `/cosmetology/clients` as real React/CSS: four quick sections, one compact name/tag/phone search field with a filter-style submit action, the client-total glow panel, «Мои клиенты / Все клиенты» heading, and reference-style client rows with avatar initials, real contact/status/source data, membership date and vertically stacked message/calendar actions at the right.
+- No synthetic client portraits, visits, bonuses or balances were introduced; the interface only presents existing client data and preserves profile, new-client, calendar and server-search links.
+- Verification: TypeScript PASS; focused UI-C test suite 6/6 PASS; `git diff --check` PASS; local browser visual check PASS. No backend, database, Prisma, migrations, payment, certificate, bonus, Beauty Bonus Club logic, financial logic, production, GitHub or deployment change.
+
+### 2026-09-18 — FEVORA crown: supplied SVG made authoritative
+
+- Owner supplied `mETbW01.svg` and explicitly set it as the source of truth for the FEVORA crown geometry. Its original file is preserved unchanged at `public/assets/fevora-crown-source.svg`; no library icon or newly drawn path is used for the brand mark.
+- The source SVG is applied as a CSS alpha mask, so its original paths, diagonals, proportions and bottom oval determine the rendered form exactly. The surrounding visual treatment adds only a deep-purple background, yellow/orange-to-coral-to-fuchsia gradient and restrained neon glow.
+- Replaced the global IMPERIA brand crown and the client-profile brand crown with this source-derived mark. Verification: TypeScript PASS; `git diff --check` PASS; local right-side browser visual check PASS. No backend, database, Prisma, payment, loyalty logic, production, GitHub or deployment change.
+
+### 2026-09-18 — FEVORA crown: transparent reference finish
+
+- Owner requested that the crown sit directly on the application background rather than inside a dark rounded-square tile, while retaining the supplied source geometry.
+- Removed the logo background only. The source-derived crown itself remains painted with a warm yellow/orange top, coral middle and fuchsia lower-oval gradient, plus a restrained transparent glow. No path, ratio or internal diagonal/oval geometry changed.
+- Local `/family` visual verification PASS; TypeScript PASS; `git diff --check` PASS. No backend, database, Prisma, payment, loyalty logic, production, GitHub or deployment change.
+
+### 2026-09-18 — FEVORA crown: approved raster logo, transparent presentation
+
+- Owner supplied a newer approved FEVORA IMPERIA raster crown. It is now used directly in the main and client-profile brand headers.
+- Removed the visible square presentation around the raster via a crown-silhouette crop in the UI, leaving the application background visible around the mark. The approved logo is shown 30% larger at all responsive breakpoints.
+- Two generated background-extraction attempts were visually rejected due to artifacts and are not used. The displayed mark remains the owner-supplied source image. Local `/family` visual verification PASS; TypeScript PASS; `git diff --check` PASS. No backend, database, Prisma, payment, loyalty logic, production, GitHub or deployment change.
+
+### 2026-09-18 — FEVORA crown: second approved size increase
+
+- Owner approved the transparent source-logo treatment and requested a further 30% increase of the crown mark.
+- Increased the rendered crown dimensions by another 30% at desktop and every existing responsive breakpoint, including the client-profile brand header. Wordmark and navigation sizing remain unchanged for visual balance.
+- Verification: TypeScript PASS; `git diff --check` PASS. No backend, database, Prisma, payment, loyalty logic, production, GitHub or deployment change.
+
+### 2026-09-18 — New client: mobile FEVORA workflow rebuilt
+
+- Owner supplied a generated mobile design target for the «Новый клиент» route and reported that the current live page was an unusable stretched desktop form.
+- Rebuilt `/cosmetology/clients/new` as a real React/CSS mobile flow: compact FEVORA brand/back/profile header, neon photo introduction card, single-column primary-contact form, clear status, source/referrer, notes and the existing anamnesis modal. The bottom IMPERIA navigation is visible again for this creation screen.
+- Existing create action and fields remain intact, including required name/phone, Instagram contact value, source/referrer, notes, anamnesis data and the manual `дд.мм.гггг` birth-date entry. The photo prompt accurately says that photo handling follows creation; no non-existent upload behavior was fabricated.
+- Verification: local right-side browser visual check PASS; TypeScript PASS; focused UI-C tests 6/6 PASS; `git diff --check` PASS. No backend, API, database, Prisma schema/migration, payment, loyalty logic, financial calculation, production, GitHub or deployment change.
+
+### 2026-09-18 — FEVORA crown: favicon and Apple touch icon
+
+- Owner requested that the already-approved FEVORA crown be used as the application favicon instead of the previous home symbol.
+- Generated browser (192/512px) and Apple-touch (180px) icon derivatives from the owner-approved crown raster, with a tight square crop that preserves the crown’s full silhouette and neon-gradient treatment. Updated app metadata to reference those assets, including the shortcut icon.
+- Verification: visual inspection of the 192px favicon PASS; TypeScript PASS; `git diff --check` PASS. No application logic, backend, database, production, GitHub or deployment change.
+
+### 2026-09-18 — New client: compact controls and mobile navigation repair
+
+- Owner requested removal of redundant photo-copy and the «Основное» heading, a plus-only photo-card treatment, non-native designed pickers for source/referrer, and repair of the bottom IMPERIA navigation that had expanded across a desktop viewport.
+- The photo card now contains only branded `+` affordances and «Карточка клиента»; no client-photo copy or portrait icon. The contact fields start immediately, without a redundant section title.
+- Status, special marks, source and referrer now use real React bottom-sheet pickers rather than browser-native select menus. The selected status and marks post through the existing client-create action and persist in the client record. Existing fixed statuses and special marks are reused; no fictitious values were introduced.
+- The bottom navigation is now a fixed, five-column, 480px-or-less mobile surface even when a desktop browser is used to preview the phone-sized route.
+- Verification: hidden local browser preview PASS; TypeScript PASS; focused UI-C tests 6/6 PASS; `git diff --check` PASS. No backend, database, Prisma schema/migration, payment, loyalty logic, production, GitHub or deployment change.
+
+### 2026-09-18 — Cash: reference-aligned monetary overview
+
+- Owner found «Неденежное погашение» confusing and asked that the Cash screen be made current and visually aligned with the approved cash reference.
+- Removed the non-cash settlement panel entirely from the live Cash UI. The overview now focuses on actual wallet receipts: period total, cash/non-cash split, four payment-method cards, a data-derived revenue chart, total, average check, transaction count, compact period/payment filters and recent real operations.
+- The chart uses existing monetary payment components only; it renders an honest empty state when no receipts exist. Certificates and bonuses are neither presented as cash nor replaced with fabricated values.
+- Verification: local right-side browser preview PASS; TypeScript PASS; focused UI-E tests 4/4 PASS; `git diff --check` PASS. No backend, database, Prisma schema/migration, payment, loyalty logic, financial calculation, production, GitHub or deployment change.
+
+### 2026-09-18 — Appointment creation: progressive, non-duplicated form
+
+- Owner reported that the new-appointment form was needlessly long and repeated labels above fields and inside placeholders.
+- Simplified the primary flow to client, service, date, time and duration. New-client contact fields, manual service/price, prepayment and note are now compact collapsed rows and appear only when needed. Labels and placeholders are short and non-repetitive.
+- The existing server action, selected-client path, manual-client path, manual-service path, scheduling fields, payment component fields and comment field are all preserved with their original names and validations.
+- Verification: TypeScript PASS; focused UI-D tests 4/4 PASS; `git diff --check` PASS. No backend, database, Prisma schema/migration, payment, loyalty logic, financial calculation, production, GitHub or deployment change.
+
+### 2026-09-18 — Family money: zero-balance envelope preparation
+
+- Owner explicitly requested three future-allocation envelopes. Created them in the local user’s «Семья» money workspace: «Закупка препаратов», «Комбикорм», and «Страховка автомобиля».
+- Each is an active UAH `ENVELOPE` with an opening balance of 0. No income, expense, transfer, allocation, or financial balance was created or changed.
+- Verification: local database query confirmed exactly the three requested active zero-balance envelopes. Local PostgreSQL container was already running; no schema or migration change. Next safe step: once the financial flow is redesigned, use internal allocations to fund these envelopes without creating duplicate income or expenses.
+
+### 2026-10-01 — Local single-owner PIN entry
+
+- Owner requested a simpler local entry surface for the one-person FEVORA workspace: no name and no email, only one six-digit PIN input.
+- Replaced the local login form and its server action with a six-digit local-PIN flow that selects the single local profile and creates the existing signed session. The simplified entry path is explicitly disabled in production; production account/password authentication remains available in `authenticateOwner` and was not removed.
+- Verification: `npm run typecheck` PASS; `git diff --check` PASS; fresh local browser reload visibly shows «FEVORA IMPERIA», «Добро пожаловать», one «Код доступа» field, and «Войти». No data, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-01 — Local access: blank-screen recovery
+
+- Owner reported a blank white page immediately after local login. Root cause was not the PIN form: the existing `fevora-local-postgres` Docker container had exited, so the authenticated route could not load the one local profile.
+- Started Docker Desktop and then restarted the already-existing local PostgreSQL container. Its contents were not changed. Confirmed one local user is reachable and the local Next server returns HTTP 200.
+- Verified end-to-end in the in-app browser: local PIN entry redirects successfully to `/family`, and the Family home UI renders normally. The local dev server remains running on `127.0.0.1:3000`. No data, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-01 — Actionable analytics and cosmetology quick entry
+
+- Owner reported that the selected-period Analytics panel on Home and the large bottom «Добавить» control in Cash and Results looked actionable but did not lead to a usable entry flow.
+- Made the Family Home analytics heading and both amount cards real links to the Analytics screen with the currently selected period retained. Cash now has explicit «Оплата процедуры» and «Расход кабинета» actions. Results exposes the same two direct actions in its header.
+- Replaced the cosmetology bottom-plus dependency on a transient sheet with a normal route at `/cosmetology/quick-add`. The route has three direct, working choices: procedure payment, cabinet expense and new client. This avoids a no-op tap even before client-side JavaScript is available.
+- Verification: TypeScript PASS; focused UI-B/UI-E tests 8/8 PASS; `git diff --check` PASS; local in-app browser verification confirmed that the Cash bottom plus opens `/cosmetology/quick-add` and every choice has its target route. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-01 — Family Analytics: coherent controls and working quick add
+
+- Owner found the black-and-gold Family Analytics controls visually inconsistent with the neon bottom navigation and reported that the raised «Добавить» control was again non-functional.
+- Kept the Analytics screen’s intentional black-and-gold direction and applied it to the bottom navigation on this screen, including the central raised plus, so the interactive controls now belong to one visual system.
+- The Family bottom plus is now a native link to `/family/quick-add`, not a client-side-only popup. The compact page offers only two direct paths: «Расход» and «Доход», both reusing the existing validated Family operation form.
+- Verification: TypeScript PASS; family navigation and Home UI tests 6/6 PASS; `git diff --check` PASS; local in-app browser confirmed Analytics → bottom plus → `/family/quick-add` and verified both destination links. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-01 — One financial entry flow across IMPERIA
+
+- Owner clarified that procedure-payment and cabinet-expense quick buttons are not the desired money-entry model. They want one consistent action: central plus → income or expense → category → amount.
+- Removed the duplicate action buttons from Cash and cosmetology Results. The central plus in cosmetology now uses the same direct Family quick-add route as the financial screens, where the existing operation form requires a category and amount before save.
+- Verification: TypeScript PASS; Family navigation and Cash UI tests 6/6 PASS; `git diff --check` PASS; local browser confirmed Cash shows no duplicate action buttons and its central plus links directly to `/family/quick-add`. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Compact income/expense picker from the central plus
+
+- Owner found the separate full-page «Добавить операцию» choice screen too large for the simple income-versus-expense decision.
+- Replaced the central-plus link in Family and Cosmetology with a compact native bottom panel. It expands in place and contains only «Расход» and «Доход»; selecting either opens the existing category-and-amount operation form.
+- The panel uses native `<details>` rather than a JavaScript-only modal so it remains operable before client hydration completes.
+- Verification: TypeScript PASS; Family navigation and Cash UI tests 6/6 PASS; `git diff --check` PASS; local browser accessibility verification confirms the plus expands to exactly two direct form links. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Expense entry: layout, native pickers and split receipt access
+
+- Owner reported that the new-expense header overlapped the top navigation, category/account controls were unusable or visually inconsistent, and splitting an ATB-style mixed receipt was inaccessible from the expense flow.
+- Removed the negative page offset so the expense header begins below the app navigation. Replaced the system account select with an in-form expandable account list and replaced the JavaScript-only category dialog with an in-form native category list.
+- Added a direct «Разделить один чек на несколько категорий» link in the expense form. It opens the existing receipt form, which creates 2–12 expense parts, requires their sum to equal the receipt total, and avoids recording an extra duplicate expense.
+- Local evidence: the active local Family profile currently has no saved FAMILY expense categories; the native picker accurately shows this rather than fabricating data and now offers «Настроить категории» to open the existing category manager. Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Cash: removed duplicate payment-method filter
+
+- Owner identified that Cash displayed the payment methods twice: once as the useful four wallet cards and again as a lower «Все / Наличные / Monobank / ПриватБанк / Прочее» chip row.
+- Removed the lower duplicate row. The four top cards remain the sole payment-method filter; period selection («Сегодня», «Вчера», «Другой период») remains directly below the chart.
+- Verification: TypeScript PASS; focused Cash UI tests 4/4 PASS; `git diff --check` PASS; local in-app browser accessibility check confirms the period controls are followed immediately by «Последние операции» with no duplicate payment-method row. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Direct operation amount and settings-only category management
+
+- Owner asked to remove inactive-feeling wording and setup controls from the income/expense entry flow. The amount is now a direct numeric field with a visible `0` placeholder: tapping the number enters the amount without opening a calculator dialog.
+- Category and account are compact native vertical pickers. Category management is no longer linked from an operation: categories belong in Settings. The account picker shows «Без счёта» and every saved account, so it naturally supports more than one account without a browser-styled select.
+- Date and comment are permanently visible together; the header’s stray square placeholder was removed. The expense-only mixed-receipt link remains available for splitting one receipt across several categories.
+- Local accessibility verification confirms the direct amount field, permanently visible date/comment fields, and expandable vertical account list. The current local Family profile has no saved categories or accounts beyond «Без счёта», so no categories/accounts were invented. Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Reliable category-icon selection
+
+- Owner reported that only the default shopping-cart icon could be selected while creating another Family category such as «Аптека».
+- Replaced JavaScript-only built-in icon buttons with a native radio group. Each built-in icon now has one real form value, a visible selected state, and remains usable even if client hydration is delayed. The optional custom-image chooser remains available.
+- Local accessibility verification: after reload the cart radio is selected by default; selecting the medicine radio switches the selected value from cart to medicine. Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Custom category image upload
+
+- Owner found that «Своя» did not open an image picker when creating a Family category.
+- Replaced the JavaScript-only trigger with a native file-label control. It opens the system image picker directly; after selection the image is resized to a compact WebP data image, shown as the category icon preview, and preferred over a built-in icon at save time.
+- Local accessibility verification confirms the visible «Загрузить свою иконку» file control. Existing categories «Продукты» and «Лекарства» are present locally and retain their selected built-in icons. Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Clear label for universal categories
+
+- Owner asked to simplify the Family category type label. The internal `BOTH` behaviour remains the same — a category can appear for either income or expense — but its user-facing label is now «Прочее» rather than «Доход и расход».
+- The label was changed in both the create/edit picker and saved-category list. Verification: TypeScript PASS; `git diff --check` PASS. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — FEVORA-styled category type picker
+
+- Owner found the system browser select for category type visually inconsistent with the FEVORA interface.
+- Replaced the native select with an in-app expandable picker: dark FEVORA surface, matching typography, pink focus state, and distinct colour dots for expense, income, and common category. It preserves the same underlying `EXPENSE`, `INCOME`, and `BOTH` values.
+- Local accessibility verification confirms the custom picker expands to exactly «Расход», «Доход», and «Общая категория». Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Working income and common-category selection
+
+- Owner found that the newly styled picker still appeared stuck on «Расход».
+- Removed the controlled client-state dependency from the type radios. They are now native form radios, so choosing «Доход» or «Общая категория» immediately changes the actual value that is saved, even before client hydration. The picker retains the FEVORA styling and selected-state feedback.
+- Local accessibility verification confirmed the radio value changes from «Расход» to «Доход». Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Always-visible category type controls
+
+- Owner correctly noted that the collapsing type picker could still look stale after selection because its closed summary did not reflect a browser-restored radio value.
+- Replaced the collapsible control with three always-visible native choices: «Расход», «Доход», and «Общая категория». The selected option has a clear FEVORA-highlighted state, and the native radio is the submitted form value.
+- Local accessibility verification confirms direct switching from «Расход» to «Доход». Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Native category type selection and reliable image persistence
+
+- Owner reported that a selected category type should close immediately and a custom image chosen in the system file picker did not reliably attach.
+- Replaced the collapsible type control with a dark, FEVORA-styled native select: it closes itself after a choice and always submits the selected type. Added server-side image processing: a chosen PNG/JPG/WebP is now posted with the category form, validated (up to 10 MB), resized to 96×96 WebP, and stored as the category icon even if client-side preview code is unavailable. The immediate browser preview/status remains when client code is available.
+- Local accessibility verification confirms the native select exposes «Расход», «Доход», and «Общая категория» as real options. Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No backend, database, schema, migration, payment, financial calculation, production, GitHub or deployment change.
+
+### 2026-10-02 — Custom-icon upload target repair
+
+- Owner reported that choosing a custom image still did not attach or persist.
+- Fixed duplicate file-input IDs which could send a chosen file to the wrong category editor once several category forms existed. Each icon picker now has a unique native file target. The server-side file handling now uses a structural file guard rather than a runtime-specific `instanceof File` check, and both create/edit forms explicitly submit multipart data.
+- Local verification confirms the active create picker exposes its own native upload control; code verification remains TypeScript PASS, Family mobile/navigation tests 10/10 PASS, and `git diff --check` PASS. No financial records, schema, migrations, production, GitHub or deployment change.
+
+### 2026-10-02 — Ready-made income category icons
+
+- Added the seven owner-supplied illustrations to the local application as reusable income presets: Clients, Eggs, Poultry, Procedures, Creams, Learning, and Community.
+- They are now selectable directly in the category icon picker and render again on the saved category card and in the quick income/expense category picker. No repeated file upload is required for these presets.
+- Local accessibility verification confirmed all seven options appear and that «Птица» switches to the selected radio value. Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No financial records, schema, migrations, production, GitHub or deployment change.
+
+### 2026-10-02 — Single supplied icon library for every category
+
+- Owner replaced the earlier request with a complete transparent-background golden icon set and asked to remove every earlier emoji/legacy icon from the category chooser.
+- The chooser now contains only the 19 supplied illustrations: seven income-oriented options plus products, automobile, travel, clothes, children, pets, home, pharmacy, phone, café, shopping, and payments. The optional «Своя» upload control remains for genuinely new personal artwork.
+- Legacy saved icon keys now render their matching new illustration automatically, so current categories no longer show emoji. Local browser verification confirms all 19 images load successfully and are the only selectable preset icons. Verification: TypeScript PASS; Family mobile/navigation tests 10/10 PASS; `git diff --check` PASS. No financial records, schema, migrations, production, GitHub or deployment change.
+
+### 2026-10-02 — One Family capital balance across Home and Transfers
+
+- Owner found that Home correctly showed 1,475 UAH from Family income/expense operations while Capital and the transfer form showed 0 UAH. The screens had been reading separate ledgers.
+- Added the synchronised Family wallet «Доступно семье». Its base balance is automatically calculated from Family operations; internal transfer ledger entries then reduce or increase that same wallet, so moving money to an envelope does not create a duplicate income or expense.
+- Home now uses the same MoneyAccount capital total as the Capital page. Local browser verification: Home/Capital/transfer all show 1,475 UAH; the transfer source list presents «Доступно семье · 1,475 UAH» and the user’s existing envelopes as destinations. The finance explanation now states this relationship. Verification: TypeScript PASS; Money, Family, navigation, and Imperia UI tests 69/69 PASS; `git diff --check` PASS. No transaction was created, no money moved, and no schema, migration, production, GitHub or deployment change.
+
+### 2026-10-02 — Finance screen without duplicate account summaries
+
+- Owner identified that the top «Кошельки» and «Конверты» amount cards duplicated the detailed wallet and envelope sections further down the same Finance screen.
+- Removed only the duplicate pair. The useful sections remain: capital, transfer, project balances, available amount, financial dynamics, the detailed wallet list, and the detailed envelope list with add/open actions.
+- Verification: TypeScript PASS; Imperia Finance and Money tests 59/59 PASS; `git diff --check` PASS. No financial record, balance, transfer, schema, migration, production, GitHub or deployment change.
+
+### 2026-10-02 — Create an expense category while adding a mandatory payment
+
+- Owner needed a way to add a missing category such as «Аренда» directly from the new mandatory-payment form, without leaving the partially completed payment.
+- Added «＋ Новая категория» immediately below the category list. It opens a compact in-place creator with a name and the full supplied icon set. It always creates an EXPENSE category, adds it to the current list, and selects it for the payment; no automatic debit occurs.
+- The create operation uses the same category validation and secure image processing as Settings. Verification: TypeScript PASS; Family navigation/mobile tests 10/10 PASS; `git diff --check` PASS. No payment or category was created during verification, and no schema, migration, production, GitHub or deployment change.
+
+### 2026-10-02 — Branded category menu and date picker for mandatory payments
+
+- Owner found the separate «＋ Новая категория» row inconvenient and the browser-native date calendar visually inconsistent with FEVORA.
+- Moved «＋ Новая категория» inside the Category dropdown as its final menu row. The options, active selection, and new-category creator now live in one cohesive control.
+- Replaced native date inputs for next payment and optional end date with FEVORA-styled in-page calendars: dark surface, branded selected date, Russian weekday/month labels, month navigation, and an optional clear action for the end date.
+- Verification: TypeScript PASS; Family navigation/mobile tests 10/10 PASS; `git diff --check` PASS. No payment or category was created during verification, and no schema, migration, production, GitHub or deployment change.
+
+### 2026-10-02 — Calendar day selection repair
+
+- Owner found that a visible day such as 31 October could not be selected in the new mandatory-payment calendar.
+- The calendar was nested inside a `<label>`, which made its interactive day buttons invalid nested controls and allowed the browser to intercept their clicks. It now uses a semantic field section instead, so every calendar day button, including 31, receives its click and updates the submitted date.
+- Verification: TypeScript PASS; Family navigation/mobile tests 10/10 PASS; `git diff --check` PASS. No payment, category, or financial data was created or changed.
+
+### 2026-10-02 — Mandatory-payment category route
+
+- Owner clarified that «＋ Новая категория» must not show a separate in-place or modal creator. It needs to open the existing Settings → Categories page, where categories are already created and managed.
+- The final menu row now navigates directly to `/family/categories`; the temporary modal path and duplicate embedded creator were removed. The current payment is not submitted or changed by taking this route.
+- Verification: TypeScript PASS; Family navigation/mobile tests 10/10 PASS; `git diff --check` PASS. No payment, category, or financial data was created or changed.
+
+### 2026-10-02 — Exclusive mandatory-payment pickers
+
+- Owner reported that dates and the newly created category could not be chosen. The supplied screen showed the date calendar and category list open together, with the later category menu covering calendar days.
+- Assigned the native HTML details controls to one shared exclusive group. Opening the calendar now closes the category list and opening Categories closes the calendar, so their action targets cannot overlap. Category selection remains a native radio input and is submitted with the payment.
+- Verification: TypeScript PASS; Family navigation/mobile tests 10/10 PASS; `git diff --check` PASS. No payment, category, or financial data was created or changed.
+
+### 2026-10-02 — Reliable mandatory-payment field controls
+
+- Owner still could not choose 31 October or select «Обязательные платежи». A separate local browser check reproduced the fault: the SSR-rendered bespoke controls opened, but their client click handlers did not persist the selected value.
+- Replaced those non-persisting controls with native form controls styled to match the FEVORA dark form: the date field retains the branded surface and focus treatment while using the browser's reliable date value; Category is now a native select. «＋ Новая категория» continues to route to the existing Categories settings page.
+- Local browser verification selected and retained `2026-10-31` and the existing «Обязательные платежи» category. TypeScript PASS; Family navigation/mobile tests 10/10 PASS; `git diff --check` PASS. No payment, category, or financial data was created or changed.
+
+### 2026-10-02 — Readable and openable mandatory-payment cards
+
+- Owner found the recurring-payment row compressed the title into unreadable fragments before the amount and did not provide a usable target to open the item.
+- Adjusted the responsive breakpoint for recurring rows: at tablet and mobile widths the payment title/metadata and amount occupy the first row, while action buttons move to a second row. This preserves room for the existing detail link instead of letting action labels squeeze it to a few pixels.
+- Local browser verification on the owner-created «За телефон» payment shows its full title, amount, status, and individual action buttons. Activating the row opened `/family/recurring/cmur6pyhc00qp8ovul0nwi0rr`, where the selected category is «Обязательные платежи». TypeScript PASS; Family navigation/mobile tests 10/10 PASS; `git diff --check` PASS. No financial data was changed during verification.
+
+### 2026-10-02 — Clickable savings goals
+
+- Owner reported two accidental duplicate goals and could not open a goal to edit or archive it. The list previously exposed only a small text link at the bottom of each large card.
+- Each active goal card is now one complete semantic link to its detail screen; tapping anywhere on a card opens its settings. The detail screen already provides editing and «Архивировать цель», which removes the chosen duplicate from active accumulation without discarding its movement history.
+- Local browser verification sees both owner-created «На море» cards as full links and successfully opened the first detail page. TypeScript PASS; Family navigation/mobile tests 10/10 PASS; `git diff --check` PASS. No goal or movement was changed during verification.
+
+### 2026-10-02 — Mandatory payments are reminders, not automatic debits
+
+- Owner clarified the intended model: a date on an obligatory payment is a deadline/reminder, not a date when money is charged. An actual expense must occur only when the owner chooses to pay from Family funds.
+- Replaced the automatic «Отметить оплаченным» flow with «Оплатить из семейных денег». It opens a prefilled manual Family expense (amount, category, payment account, and note); the balance/history change and the next reminder date advance only after that expense is explicitly saved. The recurring list now says «Оплатить до …» and «Напоминание активно».
+- The Dynamics History link for Family now opens `/family/operations` (the current Family interface), rather than legacy `/finance`. Existing duplicate-looking entries are real records from two goal initial deposits and two separately saved recurring expenses, so they are not silently concealed. Each recurring-payment occurrence can now be opened from the current history and removed with a confirmation if created by mistake.
+- Local browser verification opened the payment-to-expense flow without saving: amount 3,499 UAH and comment «Оплата: За телефон» were prefilled, and the page explicitly states that no debit happens until Save. TypeScript PASS; Family navigation/mobile tests 10/10 PASS; `git diff --check` PASS. No financial data was changed during verification.
+
+### 2026-10-03 — Pre-migration financial data audit
+
+- Created a verified local PostgreSQL rollback backup before the audit: `backups/finance-pre-audit-2026-10-03.dump` (SHA-256 `80c5354747a509ed6dd5fc5a750ddc58c1adcd07fe449e2fdfbdeeeb959fa0c6`). No database record was changed.
+- Added a read-only repeatable audit script, `scripts/audit-finance-data.ts`; its current report is `backups/finance-audit-2026-10-03.json`. It identifies user-named test candidates, exact duplicate transactions, duplicate goals, automatic recurring-payment occurrences, Money ledger activity, and counts of linked finance records in Poultry, Goods, Infobusiness, and Cosmetology.
+- Current result: six active Family transactions; no name-based test candidates; no linked finance records in the business modules; no Money ledger entries or internal transfers. The report flags two identical `На море` goals with two equal initial saving transactions and two legacy automatic recurring-payment expenses for `За телефон` as migration candidates, not automatic deletions. Six zero-balance MoneyAccount rows are ambiguous and retained pending the confirmed unified-wallet migration.
+
+### 2026-10-03 — Confirmed duplicate cleanup and plan-only goals
+
+- With owner approval and after a dry-run identity check, removed both duplicate `На море` goals and their two dependent SavingsMovement records. Their two `SAVING_IN` transactions were soft-deleted, so they no longer affect any financial calculation while the pre-cleanup backup remains a rollback point.
+- Soft-deleted the two legacy automatic `За телефон` expenses (3,499 UAH on 2026-10-31 and 2026-11-30). The mandatory payment itself remains active as a reminder, with its next due date restored to 2026-10-31. It creates an expense only through the explicit manual payment action.
+- Disabled the legacy goal-money path: creating a SavingsGoal no longer accepts an initial amount or creates a Transaction; legacy goal deposit/withdraw functions now reject requests and direct the user to envelope allocation. The corresponding goal UI no longer offers automatic money movements.
+- Added safe audit/reconciliation utilities and an isolated mocked A–E financial-core test. The post-cleanup audit confirms two active real/undecided operations only: `Процедура +1,600.00 UAH` and `Продукты -125.00 UAH`; no active goals, recurring-generated operations, exact financial duplicates, or linked module financial records remain. Recalculation sets `Доступно семье` to 1,475.00 UAH; all other five MoneyAccount rows remain at 0.00 UAH. The six zero-value accounts remain untouched.
+
+### 2026-10-03 — Goals merged into envelopes
+
+- Created a second rollback backup immediately before the schema migration: `backups/finance-pre-envelope-migration-2026-10-03.dump` (SHA-256 `ef122d18818a482d5faed15c09c8b25f51b1acd80e9c76119edebe5ea0c646f0`). The migration `20261003090000_merge_goals_into_envelopes` was then applied to the local database. It removes the empty legacy `SavingsGoal`/`SavingsMovement` tables and adds optional icon/category data to MoneyAccount envelopes.
+- A MoneyAccount with kind `ENVELOPE` is now the only goal/reserve model. It optionally has target amount and deadline; without a target it only shows its reserved balance. The old savings routes safely redirect to the envelope workspace and home now links to `Конверты`, not goals.
+- Allocation to an envelope adds only to its reserve ledger. It neither creates income/expense nor changes total capital; total capital is the sum of real wallets and free money is `wallet total − envelope reserves`. Wallet-to-wallet transfers retain their mirrored ledger entries.
+- The post-migration read-only audit is `backups/finance-audit-2026-10-03-envelope-model.json`: Family has 1,475.00 UAH in the real wallet, three zero-reserve envelopes, no ledger transfers, and no legacy Goal records. TypeScript PASS; focused finance/UI suite 80/80 PASS; `git diff --check` PASS.
+
+### 2026-10-03 — Cosmetology cabinet UI
+
+- Rebuilt only `/cosmetology` as a working cabinet; no financial schema, wallet, envelope, transaction, or database record was changed. Removed the four local-wallet balance cards, the «Касса за день» card, and the persistent «Ближайшие клиенты» list from this screen.
+- Cosmetology-specific top navigation is now `Кабинет / Клиенты / Календарь / Препараты`; the previous IMPERIA navigation remains unchanged outside cosmetology. The cabinet now contains a clickable current-month mini-calendar, a compact today/month financial summary, an existing procurement-envelope link (or the project envelope list when absent), client/inventory cards, attention items, and low-priority links to certificates, price list, finance, and analytics.
+- A mini-calendar day opens `/cosmetology/visits?date=YYYY-MM-DD` directly in the existing day view. TypeScript PASS; all tests 338/338 PASS; `git diff --check` PASS.
+
+### 2026-10-03 — Unified Safe screen
+
+- Replaced the user-facing local cosmetology «Касса» address with a redirect to `/safe`. The new Safe is read-only over `getSafeOverview`: it uses real MoneyAccount wallet balances, active envelope balances, and the single Transaction journal; it does not introduce a local cashier balance or a second calculation path.
+- Safe presents only today’s income/expense/result, real wallets, a clickable allocation summary leading to `/money/envelopes`, recent income/expense operations, and the four requested entry actions. The former graph, average check, transaction-count KPI, and date/payment-method filters remain out of Safe. The new standalone envelopes view distinguishes reservations from wallets and shows target progress where a target exists.
+- The mobile IMPERIA destination is now «Сейф». TypeScript PASS; focused Safe/finance tests 36/36 PASS; `git diff --check` PASS.
+### 2026-10-03 — Коррекция «Сейфа» и восстановление локального запуска
+
+- В общей верхней навигации IMPERIA карточка «Касса» заменена на «Сейф» и ведёт на `/safe`.
+- Причина зависания экрана была установлена по журналу: запущенный Next.js использовал устаревший Prisma Client и падал на поле `MoneyAccount.category`. Клиент пересоздан, миграции локальной базы проверены (`up to date`), dev-сервер перезапущен.
+- Актуализирован контракт нижней навигации: теперь ожидает `/safe` и «Сейф».
+
+### 2026-10-03 — Завершение UI «Сейф» и отдельная аналитика
+
+- `ImperiaSafe` показывает только итог дня, активные кошельки, кликабельное распределение, последние реальные доходы/расходы и четыре действия добавления.
+- Операции теперь содержат тип, направление, категорию, указанный кошелёк и дату/время. Переводы и резервирование не входят в показатели «Сегодня».
+- Добавлен `/analytics` с фильтрами периода, направления, типа, категории и кошелька; с суммами поступлений, расходов, итогом, количеством операций и графиком по дням. В нём нет «Среднего прихода».
+- `/safe` и `/analytics` используют контекстную нижнюю навигацию IMPERIA.
+- Исправлено стилевое подключение `/analytics`: маршрут включён в `ImperiaAppShell`, поэтому использует тёмную тему, верхние карточки и навигацию IMPERIA, а не старый светлый каркас.
+
+### 2026-10-03 — Устранено зависание после создания кошелька
+
+- Причина загрузочного экрана `/money` после создания кошелька: синхронизация технического семейного кошелька «Доступно семье» пыталась назначить его основным, когда новый кошелёк уже был отмечен основным. Уникальное ограничение основного кошелька проекта приводило к ошибке Prisma и бесконечному состоянию загрузки.
+- Синхронизация теперь атомарно снимает признак `isPrimary` с других семейных кошельков перед обновлением «Доступно семье». Созданный пользователем кошелёк остаётся активным и не удаляется; изменяется только служебный признак основного. Страница проверена в браузере: она открывается с уведомлением «Кошелёк создан» и списком всех четырёх кошельков. TypeScript PASS; `git diff --check` PASS.
+
+### 2026-10-03 — Нормализация MoneyAccount перед подключением косметологии
+
+- Создана резервная копия до изменения: `backups/finance-pre-moneyaccount-normalization-2026-10-03.dump` (SHA-256 `d182847b76bc83602c2522530757338473310169f7f00aed96e8226315bd72ce`). Аудит подтвердил: у «На Закупкку препаратов» и «На море» не было остатка, ledger-проводок или переводов; у «Доступно семье» не было проводок, но находился производный баланс 1,475.00 UAH.
+- Удалена логика, которая пересоздавала технический Wallet «Доступно семье» из журнала Transaction. Его производный остаток перенесён в реальный Wallet «Наличные»; сам технический счёт удалён после проверки отсутствия связей. Существующий результат Transaction не был изменён.
+- «На Закупкку препаратов» преобразован в общий `ENVELOPE` «На закупку» и перенесён в направление `COSMETOLOGY`; «На море» преобразован в `ENVELOPE` в направлении `FAMILY`. Резервы обоих остаются 0.00 UAH, не создавая дополнительных денег.
+- Добавлены отсутствующие физические Wallet `Monobank` и `PrivatBank` с нулевыми стартовыми остатками; «Наличные» — единственный основной физический Wallet с 1,475.00 UAH. Browser-проверка `/safe` показала 1,475.00 UAH total/free, 0.00 UAH in envelopes и только три физических Wallet. TypeScript PASS; money-account/Safe tests 27/27 PASS; `git diff --check` PASS.
+
+### 2026-10-03 — Действия «Сейфа» перенесены в нижнюю кнопку «Добавить»
+
+- Убрана нижняя карточка «Добавить» с главного экрана `/safe`, чтобы он оставался компактной сводкой денег.
+- Центральная кнопка `+` нижней навигации на `/safe` теперь открывает отдельное финансовое меню ровно с четырьмя действиями: `Доход`, `Расход`, `Перевод`, `В конверт`. Доход и расход ведут на соответствующие формы Family; оба действия перемещения открывают форму перевода, где пользователь выбирает кошелёк и, для резервирования, конверт.
+- TypeScript PASS; тест Safe UI 3/3 PASS; `git diff --check` PASS.
+
+### 2026-10-03 — Подключение косметологии к общему финансовому ядру
+
+- Добавлена локальная миграция `20261003063638_connect_cosmetology_to_money_accounts`: `Transaction.moneyAccountId` связывает единственную реальную доходную/расходную операцию с активным общим Wallet; `MoneyLedgerEntry.transactionId` связывает изменения Wallet/Envelope с той же Transaction. Prisma migration status: up to date.
+- Новая процедура через форму «Провести и сохранить» выбирает общий Wallet (`Наличные`, `Monobank`, `PrivatBank`), создаёт ровно одну `INCOME` Transaction направления `COSMETOLOGY` и категорию «Процедуры», пополняет выбранный Wallet ledger. Сумма «На закупку» создаёт только положительную ledger-запись общего Envelope «На закупку» — не расход и не второй Transaction. Автосписание материалов не восстановлено.
+- Экран «Препараты» теперь оформляет новую закупку через выбранные общий Wallet и косметологический Envelope «На закупку». Одна `EXPENSE` Transaction создаёт отрицательные ledger-записи Wallet и Envelope, один `CosmetologyExpense` с `transactionId`, одну складскую партию/историю цены и одно приходное складское движение. Операция не допускается при недостаточном резерве. Старый `CosmetologyWalletMovement` в новых сценариях не записывается.
+- Добавлены история резерва `/cosmetology/procurement-reserve` (процедуры/закупки/изменения и текущий остаток) и история препарата `/cosmetology/inventory/[id]` (дата, количество, цена за единицу, поставщик, сумма). Резерв кабинета ведёт на его историю.
+- Проверки: TypeScript PASS; focused Cosmetology tests 4/4 PASS; `git diff --check` PASS. Контрольные сценарии не записывались в пользовательскую БД как тестовые финансовые данные; их выполнение остаётся безопасной ручной проверкой после создания настоящей процедуры/закупки.
+
+### 2026-10-03 — Точечная доводка UI косметологии
+
+- Кабинет теперь читает только отображаемую сумму положительных движений общего Envelope «На закупку» за текущий день и показывает «Свободно = Поступило сегодня − На закупку сегодня». Финансовые сущности, операции и складская логика не менялись.
+- Форма проведения процедуры получает список активных общих Wallet с сервера вместо статичного списка, показывает динамическое «Свободно» и не даёт отправить резерв больше фактически оплаченной суммы.
+- В закупке служебный вариант «Не найден конверт» показывается только при действительном отсутствии Envelope. Экран препарата и список склада ясно обозначают историю закупок и цен.
+- Старые UI-переходы из кабинета и косметологического меню на `/finance?module=COSMETOLOGY` заменены на `/analytics?module=COSMETOLOGY`; текст «Касса за день» удален из оставшегося интерфейса аналитики/меню.
+- Проверки: TypeScript PASS; focused Cosmetology UI/finance tests 8/8 PASS; `git diff --check` PASS. Browser-проверка не создавала операций: кабинет отображает нулевое реальное резервирование вместо заглушки, а форма закупки содержит только активный Envelope «На закупку».
+
+### 2026-10-03 — Стабильная контрольная точка: «Косметология → Мой кабинет»
+
+- Текущая реализация кабинета зафиксирована как стабильная: проектное меню, мини-календарь, сводка финансов, резерв «На закупку», клиенты, препараты, блок внимания и быстрые ссылки работают поверх уже принятой общей финансовой модели.
+- Финансовые правила, которые нельзя обходить в последующих модулях: только `Transaction` является реальным доходом/расходом; Wallet — физическое место денег; Envelope — резерв без второй денежной операции; процедура может создать одну income Transaction и увеличить резерв; закупка создаёт одну expense Transaction и уменьшает тот же резерв. Автосписание материалов по процедуре запрещено.
+- Для новых записей не использовать legacy-механизмы `CosmetologyWallet`, `CosmetologyWalletMovement`, локальные CASH/MONO/PRIVAT-балансы, отдельные Goal и старые переходы `/finance?module=COSMETOLOGY`. Они не являются активной моделью нового интерфейса.
+- README синхронизирован с этими правилами. В контрольный commit включаются код, Prisma migrations, тесты и документация; локальные rollback-дампы БД и design references остаются вне Git, чтобы не переносить финансовые данные пользователя.
+- STOP: можно безопасно переходить к следующему модулю. Не изменять косметологическую финансовую логику без отдельного согласованного задания.

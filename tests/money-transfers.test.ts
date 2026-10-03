@@ -51,7 +51,7 @@ describe("Этап 2: история и балансы", () => {
   it("26. баланс проекта строится из его MoneyAccount", () => expect(server).toContain("summarizeProjectMoney"));
   it("27. консолидированный баланс FEVORA строится по всем счетам", () => { expect(server).toContain("getMoneyOverview"); expect(server).toContain("summaries: currencies.map"); });
   it("форма группирует счета по проектам и содержит Cancel", () => { expect(transferPage).toContain("<optgroup"); expect(transferPage).toContain("Отмена"); });
-  it("отмена сторнирует ровно две ledger-проводки", () => { expect(server).toContain("reversed.count !== 2"); expect(server).toContain("reversedAt: cancelledAt"); });
+  it("отмена сторнирует две проводки для перевода кошелёк→кошелёк и одну для резерва в конверте", () => { expect(server).toContain("isEnvelopeAllocation ? 1 : 2"); expect(server).toContain("reversedAt: cancelledAt"); });
   it("новая миграция только добавляет индекс", () => { expect(stage2Migration).toContain("CREATE INDEX"); expect(stage2Migration).not.toMatch(/DROP|DELETE|TRUNCATE/i); });
   it("action после перевода возвращает к проекту-источнику", () => expect(actions).toContain("sourceProject"));
 });

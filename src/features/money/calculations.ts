@@ -15,13 +15,13 @@ export function calculateMoneyAccountBalance(account: Pick<MoneyAccountSnapshot,
 }
 
 export function summarizeProjectMoney(accounts: MoneyAccountSnapshot[]) {
-  return accounts.reduce((summary, account) => {
+  const summary = accounts.reduce((summary, account) => {
     const balance = calculateMoneyAccountBalance(account);
-    summary.total += balance;
     if (account.kind === "ENVELOPE") summary.allocated += balance;
-    else summary.free += balance;
+    else summary.total += balance;
     return summary;
-  }, { total: 0n, allocated: 0n, free: 0n });
+  }, { total: 0n, allocated: 0n } as { total: bigint; allocated: bigint });
+  return { ...summary, free: summary.total - summary.allocated };
 }
 
 export function assertAllocationKeepsCapital(before: MoneyAccountSnapshot[], after: MoneyAccountSnapshot[]) {

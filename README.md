@@ -73,3 +73,27 @@ tests/                   Automated financial logic tests
 ```
 
 `docs/MASTER_SPEC.md` is the project source of truth. Task №1 intentionally provides placeholders only for Family and Poultry; Telegram and other later modules are not included.
+
+## Current financial model
+
+FEVORA has one financial journal: a `Transaction` is the only real income or expense.
+
+- **Wallet** is a physical place where money is held. Active shared wallets can be used by every project.
+- **Envelope** is a reservation for a purpose. It does not create another balance, income, or expense.
+- **Free money** is calculated as `all active Wallet balances − active Envelope reserves`.
+- A transfer between wallets and a reservation in an envelope do not change total capital.
+- A payment deadline is a reminder; it is not an automatic debit.
+
+Legacy goal records are replaced by envelopes with an optional target amount and deadline. The former technical account “Доступно семье” and project-local cash balances are not used as physical wallets.
+
+## Cosmetology: stable cabinet checkpoint
+
+The current `/cosmetology` cabinet is a project workspace, not a local finance dashboard:
+
+- Navigation: **Кабинет / Клиенты / Календарь / Препараты**.
+- The cabinet contains the mini-calendar, compact financial summary, common procurement reserve, clients, inventory, attention items, and quick links.
+- Procedure completion chooses an active shared Wallet, creates one income Transaction, and may reserve part of the payment in the shared **«На закупку»** Envelope. The reservation is not an expense.
+- Purchases choose a shared Wallet and the same Envelope, create one expense Transaction, increase inventory, and retain purchase-price history.
+- Inventory never auto-writes off when a procedure is completed. Stock changes only by purchase or manual correction.
+
+The following legacy paths must not be used for new records: `CosmetologyWallet`, `CosmetologyWalletMovement`, local CASH/MONO/PRIVAT balances, automatic material write-off during a procedure, and `/finance?module=COSMETOLOGY` links. Use shared Wallets, Envelopes, Transactions, `/safe`, and `/analytics?module=COSMETOLOGY` instead.

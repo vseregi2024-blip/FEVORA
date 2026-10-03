@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { CosmetologyBookings } from "@/components/cosmetology-bookings";
 import { todayInputValue } from "@/lib/dates";
 import { requireUser } from "@/server/auth";
@@ -7,8 +5,10 @@ import { getCosmetologyAppointments, getCosmetologyDashboard } from "@/server/co
 
 import { createCosmetologyAppointmentAction } from "../actions";
 
-export default async function VisitsPage() {
+export default async function VisitsPage({ searchParams }: { searchParams: Promise<{ date?: string }> }) {
   const user = await requireUser();
+  const query = await searchParams;
+  const initialDate = /^\d{4}-\d{2}-\d{2}$/.test(query.date ?? "") ? query.date : undefined;
   const [dashboard, appointments] = await Promise.all([getCosmetologyDashboard(user.id), getCosmetologyAppointments(user.id)]);
   const calendarAppointments = appointments.map((item) => ({
     id: item.id,
@@ -20,7 +20,7 @@ export default async function VisitsPage() {
     status: item.status,
   }));
 
-  return <><header className="page-header"><div><p className="eyebrow">Косметология · Календарь</p><h1>Записи клиентов</h1><p className="muted">Запись не создаёт доход и не списывает товар. Закройте процедуру после фактического выполнения.</p></div><Link href="/cosmetology" className="button secondary">Назад</Link></header>
-    <CosmetologyBookings appointments={calendarAppointments} clients={dashboard.clients.map((client) => ({ id: client.id, name: client.displayName ?? `${client.lastName} ${client.firstName}`, phone: client.phone }))} templates={dashboard.templates.map((template) => ({ id: template.id, name: template.name, basePrice: template.basePrice?.toString() ?? null }))} today={todayInputValue()} createAppointment={createCosmetologyAppointmentAction}/>
-  </>;
+  return <div className="imperia-calendar-page">
+    <CosmetologyBookings appointments={calendarAppointments} clients={dashboard.clients.map((client) => ({ id: client.id, name: client.displayName ?? `${client.lastName} ${client.firstName}`, phone: client.phone }))} templates={dashboard.templates.map((template) => ({ id: template.id, name: template.name, basePrice: template.basePrice?.toString() ?? null }))} today={todayInputValue()} initialDate={initialDate} createAppointment={createCosmetologyAppointmentAction}/>
+  </div>;
 }

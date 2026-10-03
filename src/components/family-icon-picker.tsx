@@ -1,28 +1,33 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 
-const builtInIcons = [
-  ["cart", "🛒"], ["home", "🏠"], ["children", "🧸"], ["health", "💊"],
-  ["clothes", "👕"], ["transport", "🚗"], ["fun", "🎭"], ["travel", "✈️"],
-  ["bill", "🧾"], ["income", "💼"],
-] as const;
+import { categoryIconImage, categoryIconPresets, categoryIconValue } from "@/lib/family-category-icons";
 
-export function FamilyIconPicker({ initialValue = "cart" }: { initialValue?: string }) {
-  const [value, setValue] = useState(initialValue);
+export function FamilyIconPicker({ initialValue = "expense-shopping" }: { initialValue?: string }) {
+  const selectedValue = categoryIconValue(initialValue);
+  const [customValue, setCustomValue] = useState(initialValue.startsWith("data:image/") ? initialValue : "");
+  const [preview, setPreview] = useState(initialValue.startsWith("data:image/") ? initialValue : "");
+  const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
+  const inputId = useId();
 
   async function upload(file?: File) {
     if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Выберите изображение."); return; }
+    const localPreview = URL.createObjectURL(file);
+    setPreview(localPreview); setStatus("Подготавливаем иконку…"); setError("");
     try {
       const resized = await resizeIcon(file);
-      setValue(resized); setError("");
-    } catch { setError("Не удалось обработать изображение."); }
+      URL.revokeObjectURL(localPreview); setCustomValue(resized); setPreview(resized); setStatus("Иконка выбрана");
+    } catch { setCustomValue(""); setStatus(""); setError("Не удалось обработать изображение. Выберите PNG, JPG или WebP."); }
   }
 
-  return <fieldset className="family-icon-picker"><legend>Выберите иконку</legend><input type="hidden" name="icon" value={value}/>{builtInIcons.map(([name, icon]) => <button type="button" className={value === name ? "selected" : ""} onClick={() => { setValue(name); setError(""); }} key={name} aria-label={`Иконка ${icon}`}><span>{icon}</span></button>)}<button type="button" className={value.startsWith("data:image/") ? "selected custom" : "custom"} onClick={() => fileInput.current?.click()} aria-label="Загрузить свою иконку">{value.startsWith("data:image/") ? <img src={value} alt="Своя иконка"/> : <><span>•••</span><small>Своя</small></>}</button><input ref={fileInput} className="family-icon-file" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => upload(event.target.files?.[0])}/>{error && <small className="form-error family-icon-error">{error}</small>}</fieldset>;
+  return <fieldset className="family-icon-picker"><legend>Выберите иконку</legend>
+    {categoryIconPresets.map(({ value, label }) => <label key={value} aria-label={`Иконка: ${label}`}><input type="radio" name="icon" value={value} defaultChecked={selectedValue === value}/><span><img src={categoryIconImage(value)} alt=""/></span></label>)}
+    <label className={preview ? "custom selected" : "custom"} htmlFor={inputId} aria-label="Загрузить свою иконку">{preview ? <img src={preview} alt="Своя иконка"/> : <><span>•••</span><small>Своя</small></>}<input ref={fileInput} id={inputId} name="customIconFile" className="family-icon-file" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => upload(event.target.files?.[0])}/></label><input type="hidden" name="customIcon" value={customValue}/>{status && <small className="family-icon-status">{status}</small>}{error && <small className="form-error family-icon-error">{error}</small>}
+  </fieldset>;
 }
 
 function resizeIcon(file: File) {
