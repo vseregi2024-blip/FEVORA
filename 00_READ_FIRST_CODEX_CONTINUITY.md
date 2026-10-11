@@ -1613,3 +1613,11 @@ C2.1A затем проверил весь authenticated production visit list �
 - Нижний центральный «плюс» в косметологии переведён с нативного `<details>` на управляемую action sheet. Переход `?new=appointment` теперь повторно открывает форму без перезагрузки, а закрытие формы очищает query-параметр, поэтому следующий тап снова работает.
 - Локальная browser-проверка: тап по 11:00 открыл форму со значениями `2026-10-11` и `11:00`; нижний плюс показал «Создать запись / Расход кабинета / Новый клиент / Доход»; отправка формы не выполнялась и данные не менялись. Focused calendar/envelope tests 9/9 PASS; production build PASS.
 - Railway/production, база данных, записи клиентов/визитов и loyalty не менялись; deploy не выполнялся. Накопленные локальные изменения календаря и конверта публиковать только по отдельному явному разрешению владельца.
+
+### 2026-10-11 — GitHub и Railway: опубликованы календарь и прогресс конвертов
+
+- По явному поручению владельца полная проверенная рабочая версия IMPERIA отправлена в GitHub `vseregi2024-blip/FEVORA`, branch `main`, application commit `49576f81b9931d44b4618dff0660c5bde852dadf`. Вместе с сегодняшними календарём и конвертами GitHub догнан до ранее согласованного и уже частично опубликованного IMPERIA UI.
+- Перед публикацией полный Vitest suite исправлен от трёх устаревших UI-contract ожиданий и прошёл: `45 files / 378 tests` PASS. Production `npm run build` PASS; `git diff --check` PASS. `.env`, `backups/` и старая локальная копия `src/app/(private)/family/accounts/page 2.tsx` исключены из Git/Railway context.
+- Railway service `FEVORA` deployment `a274d623-b94c-40d9-999c-a02f92202352` завершён со статусом `SUCCESS`; image digest `sha256:71702ca0143c3489d68c69f3384a8a6b4c887fd497886b7dd72fbe4fb814ba32`. Public `/api/health` вернул HTTP 200 `{"status":"ok"}`.
+- Production read-only browser verification: день календаря показывает активные часовые слоты; нажатие 11:00 открыло форму с датой `2026-10-11` и временем `11:00`; форма не отправлялась. Конверт «На отдых» показывает «Уже в конверте», цель, 0%, остаток до цели и рабочий блок выбора Wallet/суммы; пополнение не отправлялось.
+- Production data, визиты, финансовые операции, бонусы и loyalty feature flags во время deployment verification не менялись.
