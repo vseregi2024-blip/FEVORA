@@ -156,6 +156,8 @@ dd{margin:0;font-weight:800}
 .row-actions{flex-wrap:wrap;justify-content:flex-end}
 .mobile-only{display:block}
 }
+/* iPad is a touch-first PWA: retain the modern shell in portrait and landscape. */
+@media (pointer: coarse) and (min-width:801px) { .app-shell{display:block;padding-bottom:95px}.sidebar{display:none}.app-main{width:min(1180px,100%);padding:30px clamp(28px,5vw,60px) 118px}.bottom-nav{position:fixed;z-index:10;left:0;right:0;bottom:0;height:88px;padding:7px 15px max(7px,env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,1fr);align-items:end;background:#fffdf9eF;border-top:1px solid var(--line);backdrop-filter:blur(12px)}.bottom-nav a{min-height:55px;display:grid;place-items:center;gap:2px;color:var(--muted);font-size:.68rem;font-weight:800}.bottom-nav .app-icon{width:22px;height:22px}.bottom-nav .nav-add{color:var(--sage);transform:translateY(-18px)}.bottom-nav .nav-add .app-icon{width:52px;height:52px;padding:12px;border-radius:50%;color:#fff;background:var(--sage);box-shadow:0 7px 15px #426d5633}.bottom-nav .nav-add span{margin-top:-14px} }
 @media(max-width:390px){.app-main{padding-inline:16px}
 .page-header{align-items:stretch;flex-direction:column}
 .page-header .button{width:100%}

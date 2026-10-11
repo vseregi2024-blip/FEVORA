@@ -16,7 +16,7 @@ export default async function NewClientPage() {
   return <div className="imperia-new-client">
     <header className="imperia-new-client-header">
       <Link href="/cosmetology/clients" className="imperia-new-client-back" aria-label="Вернуться к клиентам"><AppIcon name="arrow"/></Link>
-      <Link href="/family" className="imperia-new-client-brand" aria-label="FEVORA IMPERIA — Дом"><img src="/assets/fevora-imperia-logo.png" alt=""/><span><b>FEVORA <em>IMPERIA</em></b><small>Больше, чем бизнес. Это ты.</small></span></Link>
+      <Link href="/family" className="imperia-new-client-brand" aria-label="FEVORA IMPERIA — Дом"><img src="/icons/fevora-crown-512.png" alt=""/><span><b>FEVORA <em>IMPERIA</em></b><small>Больше, чем бизнес. Это ты.</small></span></Link>
       <span className="imperia-new-client-tools"><span className="imperia-new-client-bell" aria-label="Уведомления"><AppIcon name="bell"/><i/></span><Link href="/family/settings" className="imperia-new-client-avatar" aria-label="Открыть настройки профиля">{initial}</Link></span>
     </header>
 

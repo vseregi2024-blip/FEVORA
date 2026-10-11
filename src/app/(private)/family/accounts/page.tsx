@@ -11,7 +11,7 @@ export default async function FamilyAccountsPage() {
   const accounts = await getFamilyAccounts(user.id, true);
 
   return <>
-    <header className="page-header"><div><Link href="/family" className="eyebrow family-home-link">← Дом</Link><h1>Счета</h1><p className="muted">Наличные, карты и другие способы оплаты.</p></div></header>
+    <header className="page-header"><div><Link href="/family/settings/sections" className="eyebrow family-home-link">← Разделы приложения</Link><h1>Счета</h1><p className="muted">Наличные, карты и другие способы оплаты.</p></div></header>
     <section className="app-card category-create"><h2>Создать счёт</h2><form action={createFamilyAccountAction} className="compact-form"><label>Название<input name="name" required autoFocus placeholder="Например: Карта"/></label><button className="button primary">Сохранить счёт</button></form></section>
     <section className="section-header"><div><p className="eyebrow">Мои счета</p><h2>{accounts.length} счетов</h2></div></section>
     <div className="family-reference-list family-clean-list family-account-list">

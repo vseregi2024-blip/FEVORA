@@ -5,5 +5,5 @@ import { getCurrentUser } from "@/server/auth";
 export const dynamic = "force-dynamic";
 
 export default async function IndexPage() {
-  redirect((await getCurrentUser()) ? "/dashboard" : "/login");
+  redirect((await getCurrentUser()) ? "/family" : "/login");
 }

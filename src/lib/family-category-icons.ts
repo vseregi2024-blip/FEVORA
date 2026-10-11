@@ -23,7 +23,7 @@ export const categoryIconPresets = [
 type CategoryIconPreset = (typeof categoryIconPresets)[number]["value"];
 
 const presetIconSources: Record<CategoryIconPreset, string> = Object.fromEntries(
-  categoryIconPresets.map(({ value }) => [value, `/assets/category-icons/${value}.png`]),
+  categoryIconPresets.map(({ value }) => [value, value === "income-clients" ? "/assets/category-icons/income-community.png" : `/assets/category-icons/${value}.png`]),
 ) as Record<CategoryIconPreset, string>;
 
 const legacyPresetAliases: Record<string, CategoryIconPreset> = {

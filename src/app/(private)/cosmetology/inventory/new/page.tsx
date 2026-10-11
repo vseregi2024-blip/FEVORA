@@ -1,0 +1,8 @@
+import Link from "next/link";
+
+import { createCosmetologyItemAction } from "../../actions";
+import { cosmeticItemCategories } from "@/server/cosmetology";
+
+export default function NewInventoryItemPage() {
+  return <div className="cosmetology-inventory-flow"><header className="page-header"><div><p className="eyebrow">Препараты и расходники</p><h1>Новая позиция</h1><p className="muted">Добавьте препарат или расходник — без закупки и движения денег.</p></div><Link href="/cosmetology/inventory" className="button secondary">Закрыть</Link></header><form action={createCosmetologyItemAction} className="transaction-form cosmetology-inventory-form"><label>Название<input name="name" required autoFocus placeholder="Например: Botox"/></label><div className="form-grid"><label>Категория<input name="category" required list="cosmetic-categories" placeholder="Ботулотоксин"/></label><label>Единица<select name="unit"><option value="UNIT">ед. ботокса</option><option value="ML">мл</option><option value="VIAL">флакон</option><option value="PIECE">шт.</option></select></label></div><div className="form-grid"><label>Бренд <small>необязательно</small><input name="brand"/></label><label>Мин. остаток <small>необязательно</small><input name="minimumQuantity" defaultValue="0" inputMode="decimal"/></label></div><label>Комментарий <small>необязательно</small><input name="comment"/></label><div className="money-form-actions"><Link href="/cosmetology/inventory" className="button secondary">Отмена</Link><button className="button primary">Добавить</button></div></form><datalist id="cosmetic-categories">{cosmeticItemCategories.map((item) => <option key={item} value={item}/>)}</datalist></div>;
+}

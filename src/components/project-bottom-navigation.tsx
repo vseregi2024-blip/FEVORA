@@ -79,7 +79,7 @@ const projectNavigations: ProjectNavigation[] = [
       { href: "/family", label: "Главная", icon: "home" },
       { href: "/family?period=TODAY", label: "Сегодня", icon: "money" },
       { href: "/family", label: "Добавить", icon: "add", isAdd: true },
-      { href: "/finance?module=FAMILY", label: "История", icon: "reports" },
+      { href: "/analytics?module=FAMILY", label: "Аналитика", icon: "reports" },
       { href: "/family?period=YEAR", label: "Итоги", icon: "projects" },
     ],
   },
@@ -93,7 +93,7 @@ function isActive(pathname: string, href: string, isAdd?: boolean) {
 
 export function ProjectBottomNavigation() {
   const pathname = usePathname();
-  if (pathname === "/projects" || pathname === "/money" || pathname.startsWith("/money/") || pathname === "/safe" || pathname.startsWith("/safe/") || pathname === "/analytics" || pathname.startsWith("/analytics/") || pathname === "/family" || pathname.startsWith("/family/") || pathname === "/cosmetology" || pathname.startsWith("/cosmetology/")) return <MobileBottomNavigation />;
+  if (pathname === "/projects" || pathname === "/capital" || pathname.startsWith("/capital/") || pathname === "/money" || pathname.startsWith("/money/") || pathname === "/safe" || pathname.startsWith("/safe/") || pathname === "/analytics" || pathname.startsWith("/analytics/") || pathname === "/family" || pathname.startsWith("/family/") || pathname === "/cosmetology" || pathname.startsWith("/cosmetology/")) return <MobileBottomNavigation />;
 
   const projectNavigation = projectNavigations.find(({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   const navigation = projectNavigation ?? { label: "Основная навигация", links: commonLinks };

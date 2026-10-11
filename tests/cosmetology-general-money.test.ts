@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const schema = readFileSync(new URL("../prisma/schema.prisma", import.meta.url), "utf8");
 const server = readFileSync(new URL("../src/server/cosmetology.ts", import.meta.url), "utf8");
-const purchasePage = readFileSync(new URL("../src/app/(private)/cosmetology/inventory/page.tsx", import.meta.url), "utf8");
+const purchasePage = readFileSync(new URL("../src/components/cosmetology-purchase-form.tsx", import.meta.url), "utf8");
 
 describe("cosmetology uses the shared money core", () => {
   it("links transactions to physical wallets and ledger entries", () => {

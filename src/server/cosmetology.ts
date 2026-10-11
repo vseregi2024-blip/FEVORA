@@ -446,7 +446,7 @@ export async function getCosmetologyProcurementReserveHistory(userId: string) {
   return { envelope, entries };
 }
 export async function getCosmetologyInventoryItemHistory(userId: string, id: string) {
-  const item = await prisma.cosmetologyInventoryItem.findFirst({ where: { id, userId, deletedAt: null }, include: { lots: { where: { deletedAt: null }, orderBy: { purchaseDate: "desc" } } } });
+  const item = await prisma.cosmetologyInventoryItem.findFirst({ where: { id, userId, deletedAt: null }, include: { lots: { where: { deletedAt: null }, orderBy: { purchaseDate: "desc" } }, movements: { where: { deletedAt: null, type: { in: [CosmetologyInventoryMovementType.ADJUSTMENT, CosmetologyInventoryMovementType.WRITE_OFF] } }, orderBy: [{ operationDate: "desc" }, { createdAt: "desc" }] } } });
   if (!item) throw new Error("Препарат не найден.");
   return item;
 }

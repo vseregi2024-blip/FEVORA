@@ -7,7 +7,10 @@ const service = readFileSync(new URL("../src/server/family.ts", import.meta.url)
 const actions = readFileSync(new URL("../src/app/(private)/family/actions.ts", import.meta.url), "utf8");
 const analytics = readFileSync(new URL("../src/app/(private)/family/analytics/page.tsx", import.meta.url), "utf8");
 const settingsView = readFileSync(new URL("../src/components/imperia-settings.tsx", import.meta.url), "utf8");
+const settingsSections = readFileSync(new URL("../src/app/(private)/family/settings/sections/page.tsx", import.meta.url), "utf8");
 const theme = readFileSync(new URL("../src/components/family-theme-toggle.tsx", import.meta.url), "utf8");
+const quickOperation = readFileSync(new URL("../src/components/quick-family-operation-form.tsx", import.meta.url), "utf8");
+const splitReceipt = readFileSync(new URL("../src/components/split-receipt-form.tsx", import.meta.url), "utf8");
 
 describe("Family mobile v2 contract", () => {
   it("adds accounts and savings dates without destructive SQL", () => {
@@ -25,6 +28,20 @@ describe("Family mobile v2 contract", () => {
   it("validates account ownership before writing financial records", () => {
     expect(service).toContain("assertFamilyAccount");
     expect(service).toContain("familyAccountId: input.accountId");
+  });
+
+  it("requires a physical wallet for a new income without radio-button account choices", () => {
+    expect(quickOperation).toContain('name="accountId"');
+    expect(quickOperation).toContain('required={type === "INCOME"}');
+    expect(quickOperation).not.toContain("Без счёта");
+    expect(service).toContain("Для дохода выберите кошелёк поступления.");
+  });
+
+  it("requires a wallet and offers an active add-part action for a split expense", () => {
+    expect(splitReceipt).toContain('name="accountId" required');
+    expect(splitReceipt).not.toContain("Без счёта");
+    expect(splitReceipt).toContain("+ Добавить часть");
+    expect(service).toContain("Для расхода выберите кошелёк оплаты.");
   });
 
   it("supports account create, edit, archive, restore and ordering", () => {
@@ -50,9 +67,10 @@ describe("Family mobile v2 contract", () => {
   });
 
   it("keeps infrequent directories in a separate Family settings screen", () => {
-    expect(settingsView).toContain('/family/categories');
-    expect(settingsView).toContain('/family/accounts');
-    expect(settingsView).toContain('/family/recurring');
+    expect(settingsView).toContain('/family/settings/sections');
+    expect(settingsSections).toContain('/family/categories');
+    expect(settingsSections).toContain('/family/accounts');
+    expect(settingsSections).toContain('/family/recurring');
   });
 
   it("offers persistent dark and light Family palettes", () => {

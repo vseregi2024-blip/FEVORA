@@ -11,6 +11,8 @@ const historyPage = readFileSync(join(process.cwd(), "src/app/(private)/money/tr
 const transferPage = readFileSync(join(process.cwd(), "src/app/(private)/money/transfer/page.tsx"), "utf8");
 const stage1Migration = readFileSync(join(process.cwd(), "prisma/migrations/20260909120000_add_universal_money_accounts/migration.sql"), "utf8");
 const stage2Migration = readFileSync(join(process.cwd(), "prisma/migrations/20260909150000_add_internal_transfer_history_index/migration.sql"), "utf8");
+const walletLinkMigration = readFileSync(join(process.cwd(), "prisma/migrations/20261003063638_connect_cosmetology_to_money_accounts/migration.sql"), "utf8");
+const envelopeMetadataMigration = readFileSync(join(process.cwd(), "prisma/migrations/20261003090000_merge_goals_into_envelopes/migration.sql"), "utf8");
 
 describe("Этап 2: обязательные межпроектные сценарии", () => {
   it("1. Косметология → Семья", () => expect(() => validateInternalAllocation(account("mono", "cosmetology"), account("family-card", "family"), 20_000_00n)).not.toThrow());
@@ -53,5 +55,13 @@ describe("Этап 2: история и балансы", () => {
   it("форма группирует счета по проектам и содержит Cancel", () => { expect(transferPage).toContain("<optgroup"); expect(transferPage).toContain("Отмена"); });
   it("отмена сторнирует две проводки для перевода кошелёк→кошелёк и одну для резерва в конверте", () => { expect(server).toContain("isEnvelopeAllocation ? 1 : 2"); expect(server).toContain("reversedAt: cancelledAt"); });
   it("новая миграция только добавляет индекс", () => { expect(stage2Migration).toContain("CREATE INDEX"); expect(stage2Migration).not.toMatch(/DROP|DELETE|TRUNCATE/i); });
-  it("action после перевода возвращает к проекту-источнику", () => expect(actions).toContain("sourceProject"));
+  it("миграции для общих кошельков и конвертов не удаляют legacy-данные", () => {
+    for (const migration of [walletLinkMigration, envelopeMetadataMigration]) expect(migration).not.toMatch(/DROP\s+(TABLE|COLUMN|TYPE)|DELETE\s+FROM|TRUNCATE/i);
+    expect(walletLinkMigration).toContain('ADD COLUMN "moneyAccountId"');
+    expect(walletLinkMigration).toContain('ADD COLUMN "transactionId"');
+    expect(envelopeMetadataMigration).toContain('ADD COLUMN "icon"');
+    expect(envelopeMetadataMigration).toContain('ADD COLUMN "categoryId"');
+    expect(envelopeMetadataMigration).toContain("SavingsGoal and SavingsMovement are intentionally preserved");
+  });
+  it("action после перевода возвращает на рабочий экран Сейфа", () => expect(actions).toContain("redirect(`/safe?transfer=${transferId}`)"));
 });

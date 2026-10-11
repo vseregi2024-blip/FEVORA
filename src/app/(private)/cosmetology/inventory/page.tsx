@@ -1,23 +1,34 @@
 import Link from "next/link";
 
-import { createCosmetologyItemAction, createCosmetologyPurchaseWithMoneyAction, createInventoryChangeAction } from "../actions";
-import { cosmeticItemCategories, getCosmetologyDashboard, getCosmetologyMoneyOptions } from "@/server/cosmetology";
+import { cosmeticItemCategories, getCosmetologyDashboard } from "@/server/cosmetology";
 import { requireUser } from "@/server/auth";
-import { todayInputValue } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 
 const unitLabels: Record<string, string> = { UNIT: "ед.", ML: "мл", VIAL: "флак.", PIECE: "шт." };
+const queryValue = (value: string | string[] | undefined) => typeof value === "string" ? value.trim() : "";
 
-export default async function InventoryPage() {
+export default async function InventoryPage({ searchParams }: { searchParams: Promise<{ q?: string | string[]; category?: string | string[] }> }) {
   const user = await requireUser();
-  const [dashboard, money] = await Promise.all([getCosmetologyDashboard(user.id), getCosmetologyMoneyOptions(user.id)]);
-  return <>
-    <header className="page-header"><div><p className="eyebrow">Косметология · Товары</p><h1>Препараты и расходники</h1><p className="muted">Остатки меняются только при закупке или ручной корректировке.</p></div><Link href="/cosmetology" className="button secondary">Назад</Link></header>
-    <section className="family-grid">
-      <article className="app-card"><h2>Новая позиция</h2><form action={createCosmetologyItemAction} className="compact-form"><label>Название<input name="name" required placeholder="Botox"/></label><div className="form-grid"><label>Категория<input name="category" required list="cosmetic-categories" placeholder="Ботулотоксин"/></label><label>Единица<select name="unit"><option value="UNIT">ед. ботокса</option><option value="ML">мл</option><option value="VIAL">флакон</option><option value="PIECE">шт.</option></select></label></div><div className="form-grid"><label>Бренд<input name="brand"/></label><label>Мин. остаток<input name="minimumQuantity" required defaultValue="0" inputMode="decimal"/></label></div><label>Комментарий<input name="comment"/></label><button className="button primary">Добавить товар</button></form><datalist id="cosmetic-categories">{cosmeticItemCategories.map((item) => <option key={item} value={item}/>)}</datalist></article>
-      <article className="app-card"><h2>Новая закупка</h2><form action={createCosmetologyPurchaseWithMoneyAction} className="compact-form"><label>Позиция<select name="itemId" required defaultValue=""><option value="" disabled>Выберите позицию</option>{dashboard.items.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><div className="form-grid"><label>Количество<input name="quantity" required inputMode="decimal" placeholder="10"/></label><label>Общая сумма<input name="totalAmount" required inputMode="decimal" placeholder="2600"/></label></div><div className="form-grid"><label>Дата<input name="purchaseDate" type="date" required defaultValue={todayInputValue()}/></label><label>Поставщик<input name="supplier"/></label></div><label>Кошелёк оплаты<select name="moneyAccountId" required defaultValue=""><option value="" disabled>Выберите кошелёк</option>{money.wallets.map((wallet) => <option key={wallet.id} value={wallet.id}>{wallet.name}</option>)}</select></label><label>Резерв<select name="procurementEnvelopeId" required defaultValue={money.procurementEnvelope?.id ?? ""}>{money.procurementEnvelope ? <option value={money.procurementEnvelope.id}>{money.procurementEnvelope.name}</option> : <option value="" disabled>Не найден конверт «На закупку»</option>}</select></label><label>Комментарий<input name="comment"/></label><button className="button primary" disabled={!money.procurementEnvelope || !money.wallets.length}>Купить и оприходовать</button></form></article>
-    </section>
-    <section className="family-grid"><article className="app-card"><h2>Ручная корректировка</h2><form action={createInventoryChangeAction} className="compact-form"><label>Позиция<select name="itemId" required defaultValue=""><option value="" disabled>Выберите позицию</option>{dashboard.items.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><div className="form-grid"><label>Действие<select name="type"><option value="WRITE_OFF">Списание</option><option value="ADJUSTMENT">Корректировка +</option></select></label><label>Количество<input name="quantity" required inputMode="decimal"/></label></div><label>Дата<input name="operationDate" type="date" required defaultValue={todayInputValue()}/></label><label>Причина<input name="comment" required placeholder="Инвентаризация"/></label><button className="button secondary">Сохранить</button></form></article></section>
-    <section className="section-header"><div><p className="eyebrow">Наличие</p><h2>Склад сейчас</h2><p className="muted">Откройте препарат, чтобы посмотреть историю закупок и цен.</p></div></section><div className="transaction-list">{dashboard.items.map((item) => { const lot = item.lots.find((value) => value.availableQuantity.gt(0)); return <Link className="transaction-row" href={`/cosmetology/inventory/${item.id}`} key={item.id}><span><b>{item.name}</b><small>{item.category}{item.brand ? ` · ${item.brand}` : ""}{lot ? ` · ${formatMoney(lot.unitCost.toString())}/${unitLabels[item.unit]}` : ""}</small><small>История закупок и цен →</small></span><strong>{item.currentQuantity.toString()} {unitLabels[item.unit]}</strong></Link>; })}</div>{!dashboard.items.length && <p className="empty">Товаров пока нет.</p>}
-  </>;
+  const query = await searchParams;
+  const search = queryValue(query.q).toLocaleLowerCase("ru-RU");
+  const category = queryValue(query.category);
+  const dashboard = await getCosmetologyDashboard(user.id);
+  const categories = [...new Set([...cosmeticItemCategories, ...dashboard.items.map((item) => item.category)])].sort((a, b) => a.localeCompare(b, "ru"));
+  const items = dashboard.items.filter((item) => {
+    const matchesSearch = !search || [item.name, item.category, item.brand ?? ""].some((value) => value.toLocaleLowerCase("ru-RU").includes(search));
+    return matchesSearch && (!category || item.category === category);
+  });
+
+  return <div className="cosmetology-inventory-page">
+    <header className="page-header"><div><p className="eyebrow">Косметология · Товары</p><h1>Препараты и расходники</h1><p className="muted">Остатки меняются только при закупке или ручной корректировке.</p></div><Link href="/family/settings/sections" className="button secondary">← Разделы приложения</Link></header>
+    <section className="cosmetology-inventory-actions" aria-label="Действия со складом"><Link href="/cosmetology/inventory/new" className="button secondary">＋ Добавить позицию</Link><Link href="/cosmetology/inventory/purchase" className="button primary">＋ Новая закупка</Link></section>
+    <form className="cosmetology-inventory-filters" action="/cosmetology/inventory"><label>Поиск<input name="q" defaultValue={search} placeholder="Название, бренд или категория"/></label><label>Категория<select name="category" defaultValue={category}><option value="">Все категории</option>{categories.map((item) => <option value={item} key={item}>{item}</option>)}</select></label><button className="button secondary">Показать</button></form>
+    <section className="section-header"><div><p className="eyebrow">Наличие</p><h2>Склад сейчас</h2><p className="muted">Откройте позицию, чтобы посмотреть историю закупок, цен и корректировок.</p></div></section>
+    <div className="cosmetology-inventory-list">{items.map((item) => {
+      const latestLot = item.lots.slice().sort((a, b) => b.purchaseDate.getTime() - a.purchaseDate.getTime() || b.createdAt.getTime() - a.createdAt.getTime())[0];
+      const low = item.currentQuantity.lte(item.minimumQuantity);
+      return <Link className="cosmetology-inventory-card" href={`/cosmetology/inventory/${item.id}`} key={item.id}><span><b>{item.name}</b><small>{item.category}{item.brand ? ` · ${item.brand}` : ""}</small><small>Последняя цена: {latestLot ? `${formatMoney(latestLot.unitCost.toString())}/${unitLabels[item.unit]}` : "ещё нет закупок"}</small><em>История закупок и цен <span aria-hidden>→</span></em></span><strong>{item.currentQuantity.toString()} <small>{unitLabels[item.unit]}</small>{low && <i>Заканчивается</i>}</strong></Link>;
+    })}</div>
+    {!items.length && <p className="empty">{dashboard.items.length ? "По этому фильтру позиций нет." : "Товаров пока нет. Добавьте первую позицию."}</p>}
+  </div>;
 }

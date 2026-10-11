@@ -9,3 +9,5 @@ coverage/
 !.env.example
 prisma/*.db
 prisma/*.db-journal
+backups/
+src/app/(private)/family/accounts/page 2.tsx

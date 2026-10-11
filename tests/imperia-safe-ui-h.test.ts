@@ -10,7 +10,8 @@ const mobileNavigation = readFileSync(new URL("../src/components/mobile-bottom-n
 
 describe("FEVORA IMPERIA UI-H Safe and analytics", () => {
   it("keeps Safe focused on current money, wallets, allocation and operations", () => {
-    for (const label of ["Пришло", "Ушло", "Итог", "Кошельки", "Распределение денег", "Всего денег", "В конвертах", "Свободно", "Последние операции"]) expect(safe).toContain(label);
+    for (const label of ["Пришло", "Ушло", "Итог", "Кошельки", "Распределение денег", "Всего денег", "В конвертах", "Свободно"]) expect(safe).toContain(label);
+    expect(safe).not.toContain("Последние операции");
     expect(safe).not.toContain("Средний чек");
     expect(safe).not.toContain("Выручка за день");
   });

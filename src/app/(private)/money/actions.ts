@@ -9,8 +9,10 @@ import { cancelInternalTransfer, createInternalAllocation, createMoneyAccount, d
 
 const text = (data: FormData, key: string) => typeof data.get(key) === "string" ? String(data.get(key)) : "";
 const optional = (data: FormData, key: string) => text(data, key).trim() || null;
-const refresh = () => ["/money", "/money/transfers", "/settings"].forEach((path) => revalidatePath(path));
+const refresh = () => ["/family", "/money", "/safe", "/capital", "/money/envelopes", "/money/transfers", "/analytics", "/settings", "/family/settings/money"].forEach((path) => revalidatePath(path));
 const message = (error: unknown) => encodeURIComponent(error instanceof Error ? error.message : "Не удалось сохранить.");
+const settingsMoneyReturn = (data: FormData) => text(data, "returnTo") === "/family/settings/money" ? "/family/settings/money" : null;
+const accountRedirect = (kind: string, result: string, returnTo: string | null) => returnTo ? `${returnTo}?${result}=1` : kind === "ENVELOPE" ? `/money/envelopes?${result}=${result === "created" ? "ENVELOPE" : "1"}` : `/safe?${result}=${result === "created" ? "WALLET" : "1"}`;
 
 function accountInput(data: FormData) {
   return {
@@ -33,45 +35,46 @@ export async function createMoneyAccountAction(data: FormData) {
   const user = await requireUser();
   const project = text(data, "projectCode");
   const kind = text(data, "kind");
+  const returnTo = settingsMoneyReturn(data);
   try { await createMoneyAccount(user.id, accountInput(data)); }
-  catch (error) { redirect(`/money/new?project=${project}&kind=${kind}&error=${message(error)}`); }
+  catch (error) { redirect(`/money/new?project=${project}&kind=${kind}${returnTo ? `&returnTo=${returnTo}` : ""}&error=${message(error)}`); }
   refresh();
-  redirect(`/money?project=${project}&created=${kind}`);
+  redirect(accountRedirect(kind, "created", returnTo));
 }
 
 export async function updateMoneyAccountAction(data: FormData) {
   const user = await requireUser();
   const id = text(data, "id");
-  const project = text(data, "projectCode");
+  const kind = text(data, "kind");
+  const returnTo = settingsMoneyReturn(data);
   try { await updateMoneyAccount(user.id, id, accountInput(data)); }
-  catch (error) { redirect(`/money/${id}?error=${message(error)}`); }
+  catch (error) { redirect(`/money/${id}?${returnTo ? `returnTo=${returnTo}&` : ""}error=${message(error)}`); }
   refresh();
-  redirect(`/money?project=${project}&updated=1`);
+  redirect(accountRedirect(kind, "updated", returnTo));
 }
 
 export async function archiveMoneyAccountAction(data: FormData) {
   const user = await requireUser();
-  const project = text(data, "projectCode");
-  await setMoneyAccountActive(user.id, text(data, "id"), text(data, "isActive") === "true");
+  const account = await getMoneyAccount(user.id, text(data, "id"));
+  const returnTo = settingsMoneyReturn(data);
+  await setMoneyAccountActive(user.id, account.id, text(data, "isActive") === "true");
   refresh();
-  redirect(`/money?project=${project}&archived=1`);
+  redirect(accountRedirect(account.kind, "archived", returnTo));
 }
 
 export async function deleteMoneyAccountAction(data: FormData) {
   const user = await requireUser();
   const id = text(data, "id");
-  let project = text(data, "projectCode");
-  if (!project) project = (await getMoneyAccount(user.id, id)).project.code;
+  const account = await getMoneyAccount(user.id, id);
+  const returnTo = settingsMoneyReturn(data);
   try { await deleteUnusedMoneyAccount(user.id, id); }
-  catch (error) { redirect(`/money/${id}?error=${message(error)}`); }
+  catch (error) { redirect(`/money/${id}?${returnTo ? `returnTo=${returnTo}&` : ""}error=${message(error)}`); }
   refresh();
-  redirect(`/money?project=${project}&deleted=1`);
+  redirect(accountRedirect(account.kind, "deleted", returnTo));
 }
 
 export async function createInternalAllocationAction(data: FormData) {
   const user = await requireUser();
-  const returnProject = text(data, "projectCode") || FinanceModule.FAMILY;
-  let sourceProject = returnProject;
   let transferId = "";
   try {
     const transfer = await createInternalAllocation(user.id, {
@@ -83,10 +86,30 @@ export async function createInternalAllocationAction(data: FormData) {
       idempotencyKey: text(data, "idempotencyKey"),
     });
     transferId = transfer.id;
-    sourceProject = (await getMoneyAccount(user.id, transfer.sourceAccountId)).project.code;
-  } catch (error) { redirect(`/money/transfer?project=${returnProject}&error=${message(error)}`); }
+  } catch (error) { redirect(`/money/transfer?error=${message(error)}`); }
   refresh();
-  redirect(`/money?project=${sourceProject}&transfer=${transferId}`);
+  redirect(`/safe?transfer=${transferId}`);
+}
+
+export async function fundMoneyEnvelopeAction(data: FormData) {
+  const user = await requireUser();
+  const envelopeId = text(data, "targetAccountId");
+  const returnTo = settingsMoneyReturn(data);
+  try {
+    const envelope = await getMoneyAccount(user.id, envelopeId);
+    if (envelope.kind !== MoneyAccountKind.ENVELOPE || !envelope.isActive) throw new Error("Этот конверт нельзя пополнить.");
+    await createInternalAllocation(user.id, {
+      sourceAccountId: text(data, "sourceAccountId"),
+      targetAccountId: envelope.id,
+      amount: text(data, "amount"),
+      operationDate: text(data, "operationDate"),
+      comment: `Пополнение конверта «${envelope.name}»`,
+      idempotencyKey: text(data, "idempotencyKey"),
+    });
+  } catch (error) { redirect(`/money/${envelopeId}?${returnTo ? `returnTo=${returnTo}&` : ""}error=${message(error)}`); }
+  refresh();
+  revalidatePath(`/money/${envelopeId}`);
+  redirect(`/money/${envelopeId}?${returnTo ? `returnTo=${returnTo}&` : ""}funded=1`);
 }
 
 export async function cancelInternalTransferAction(data: FormData) {

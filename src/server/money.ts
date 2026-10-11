@@ -1,6 +1,6 @@
 import "server-only";
 
-import { FinanceModule, MoneyAccountKind, MoneyAccountType, Prisma } from "@prisma/client";
+import { FinanceModule, MoneyAccountKind, MoneyAccountType, MoneyLedgerEntryType, Prisma, TransactionType } from "@prisma/client";
 import { z } from "zod";
 
 import { calculateMoneyAccountBalance, summarizeProjectMoney, validateInternalAllocation, validateTransferCancellation } from "@/features/money/calculations";
@@ -41,6 +41,16 @@ export const internalAllocationSchema = z.object({
   operationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   comment: z.string().trim().max(500).optional().nullable(),
   idempotencyKey: z.string().trim().min(8).max(100),
+});
+
+export const walletTransactionSchema = z.object({
+  type: z.enum([TransactionType.INCOME, TransactionType.EXPENSE]),
+  amount: z.coerce.number().positive("Введите сумму больше нуля.").max(999999999999),
+  operationDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  module: z.nativeEnum(FinanceModule).refine((module) => module !== FinanceModule.GENERAL),
+  categoryId: z.string().cuid().nullable(),
+  moneyAccountId: z.string().cuid(),
+  description: z.string().trim().max(500).nullable(),
 });
 
 type AllocationInput = z.output<typeof internalAllocationSchema>;
@@ -123,7 +133,7 @@ export async function getSafeOverview(userId: string) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const [todayTransactions, recentTransactions] = await Promise.all([
     prisma.transaction.findMany({ where: { userId, deletedAt: null, operationDate: { gte: today }, type: { in: ["INCOME", "EXPENSE"] } }, select: { type: true, amount: true } }),
-    prisma.transaction.findMany({ where: { userId, deletedAt: null, type: { in: ["INCOME", "EXPENSE"] } }, include: { category: { select: { name: true } }, familyAccount: { select: { name: true } } }, orderBy: [{ operationDate: "desc" }, { createdAt: "desc" }], take: 8 }),
+    prisma.transaction.findMany({ where: { userId, deletedAt: null, type: { in: ["INCOME", "EXPENSE"] } }, include: { category: { select: { name: true } }, moneyAccount: { select: { name: true } }, familyAccount: { select: { name: true } } }, orderBy: [{ operationDate: "desc" }, { createdAt: "desc" }], take: 8 }),
   ]);
   const todayIncome = todayTransactions.filter((item) => item.type === "INCOME").reduce((sum, item) => sum + moneyToMinorUnits(item.amount.toString()), 0n);
   const todayExpense = todayTransactions.filter((item) => item.type === "EXPENSE").reduce((sum, item) => sum + moneyToMinorUnits(item.amount.toString()), 0n);
@@ -132,9 +142,44 @@ export async function getSafeOverview(userId: string) {
   return { ...overview, today: { income: todayIncome, expense: todayExpense }, allocations, recentTransactions };
 }
 
+/** The common wallet transaction path used by Safe and calendar entry points. */
+export async function createWalletTransaction(userId: string, raw: unknown) {
+  const input = walletTransactionSchema.parse(raw);
+  const [wallet, category] = await Promise.all([
+    prisma.moneyAccount.findFirst({ where: { id: input.moneyAccountId, userId, isActive: true, kind: MoneyAccountKind.WALLET }, include: { project: true } }),
+    input.categoryId ? prisma.category.findFirst({ where: { id: input.categoryId, isArchived: false, module: input.module, OR: [{ userId }, { userId: null }] } }) : null,
+  ]);
+  if (!wallet) throw new Error("Выберите активный кошелёк.");
+  if (input.categoryId && !category) throw new Error("Выберите доступную категорию.");
+  const amount = new Prisma.Decimal(input.amount);
+  const operationDate = dateOnly(input.operationDate)!;
+  return prisma.$transaction(async (tx) => {
+    const transaction = await tx.transaction.create({ data: { userId, type: input.type, amount, currency: wallet.currency, operationDate, module: input.module, categoryId: input.categoryId, moneyAccountId: wallet.id, description: input.description || null, source: "WEB" } });
+    await tx.moneyLedgerEntry.create({ data: { userId, projectId: wallet.projectId, accountId: wallet.id, transactionId: transaction.id, type: input.type === TransactionType.INCOME ? MoneyLedgerEntryType.INCOME : MoneyLedgerEntryType.EXPENSE, amount: input.type === TransactionType.INCOME ? amount : amount.neg(), currency: wallet.currency, operationDate } });
+    return transaction;
+  });
+}
+
+export async function getCalendarTransactions(userId: string) {
+  return prisma.transaction.findMany({ where: { userId, deletedAt: null, type: { in: [TransactionType.INCOME, TransactionType.EXPENSE] } }, include: { category: { select: { name: true } }, moneyAccount: { select: { name: true } } }, orderBy: [{ operationDate: "asc" }, { createdAt: "asc" }] });
+}
+
 export async function getMoneyTransferWorkspace(userId: string) {
-  const [projects, overview] = await Promise.all([getMoneyProjects(userId), getMoneyOverview(userId)]);
-  return { projects, accounts: overview.accounts.filter((account) => account.isActive), summaries: overview.summaries };
+  const [projects, overview, reservations] = await Promise.all([
+    getMoneyProjects(userId),
+    getMoneyOverview(userId),
+    prisma.internalTransfer.groupBy({
+      by: ["sourceAccountId"],
+      where: { userId, status: "POSTED", targetAccount: { kind: MoneyAccountKind.ENVELOPE } },
+      _sum: { targetAmount: true },
+    }),
+  ]);
+  const reservedByWallet = new Map(reservations.map((item) => [item.sourceAccountId, moneyToMinorUnits(item._sum.targetAmount?.toString() ?? "0")]));
+  const accounts = overview.accounts.filter((account) => account.isActive).map((account) => ({
+    ...account,
+    availableBalanceMinor: account.kind === MoneyAccountKind.WALLET ? account.balanceMinor - (reservedByWallet.get(account.id) ?? 0n) : account.balanceMinor,
+  }));
+  return { projects, accounts, summaries: overview.summaries };
 }
 
 export async function getInternalTransferHistory(userId: string) {
@@ -153,7 +198,7 @@ export async function getInternalTransfer(userId: string, id: string) {
 }
 
 export async function getMoneyAccount(userId: string, id: string) {
-  return prisma.moneyAccount.findFirstOrThrow({ where: { id, userId }, include: { project: true, category: true, _count: { select: { moneyLedgerEntries: true, outgoingTransfers: true, incomingTransfers: true } } } });
+  return prisma.moneyAccount.findFirstOrThrow({ where: { id, userId }, include: { project: true, category: true, moneyLedgerEntries: { where: { reversedAt: null }, select: { amount: true, reversedAt: true }, orderBy: { operationDate: "asc" } }, _count: { select: { moneyLedgerEntries: true, outgoingTransfers: true, incomingTransfers: true } } } });
 }
 
 export async function createMoneyAccount(userId: string, raw: unknown) {

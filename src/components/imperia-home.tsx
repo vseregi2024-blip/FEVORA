@@ -10,12 +10,12 @@ const periodLabels = { MONTH: "Этот месяц", THREE_MONTHS: "3 месяц
 export function ImperiaHome({ balance, income, expense, result, envelopes, goalProgress, categories, period, notice }: { balance: string; income: string; expense: string; result: string; envelopes: Envelope[]; goalProgress: number; categories: Category[]; period: keyof typeof periodLabels; notice?: string | null }) {
   const featuredEnvelope = envelopes[0] ?? null;
   const chartItems = categories.slice(0, 8);
-  const analyticsHref = `/family/analytics?period=${period === "CUSTOM" ? "MONTH" : period}`;
+  const analyticsHref = `/analytics?module=FAMILY&period=${period === "THREE_MONTHS" ? "MONTH" : period === "YEAR" ? "MONTH" : period}`;
 
   return <div className="imperia-home">
     {notice && <p className="imperia-home-notice">{notice}</p>}
 
-    <Link href="/money" className="imperia-home-capital" aria-label={`Капитал: ${balance}. Открыть управление деньгами`}>
+    <Link href="/capital" className="imperia-home-capital" aria-label={`Капитал: ${balance}. Открыть обзор капитала`}>
       <IconCircle icon="cash" tone="primary" size="large" className="imperia-home-capital-icon"/>
       <div className="imperia-home-capital-copy"><span>Капитал <AppIcon name="arrow"/></span><strong>{balance}</strong></div>
       <div className="imperia-home-capital-insight"><b>{result}</b><span>результат за период</span></div>
@@ -25,7 +25,7 @@ export function ImperiaHome({ balance, income, expense, result, envelopes, goalP
     </Link>
 
     <section className="imperia-home-panel imperia-home-goals">
-      <header><IconCircle icon="target" tone="pink" size="large"/><div><h2>Конверты <AppIcon name="arrow"/></h2></div><Link href="/money?project=FAMILY#envelopes">Все конверты <AppIcon name="arrow"/></Link></header>
+      <header><IconCircle icon="target" tone="pink" size="large"/><div><h2>Конверты <AppIcon name="arrow"/></h2></div><Link href="/money/envelopes">Все конверты <AppIcon name="arrow"/></Link></header>
       {featuredEnvelope ? <Link href={`/money/${featuredEnvelope.id}`} className="imperia-home-goal-row"><span><b>{featuredEnvelope.name}</b>{featuredEnvelope.target && <small>{featuredEnvelope.current} из {featuredEnvelope.target}</small>}</span><div className="imperia-home-progress"><i style={{ width: `${featuredEnvelope.progress ?? 0}%` }}/></div><strong>{featuredEnvelope.progress === null ? featuredEnvelope.current : `${featuredEnvelope.progress}%`}</strong></Link> : <Link href="/money/new?project=FAMILY&kind=ENVELOPE" className="imperia-home-goal-empty"><span><b>Создайте первый конверт</b><small>Резерв и прогресс появятся здесь</small></span><strong>＋</strong></Link>}
     </section>
 

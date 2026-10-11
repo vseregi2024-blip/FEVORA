@@ -14,9 +14,12 @@ const categoryId = z.string().cuid();
 const optionalText = z.string().trim().max(500).nullable().transform((value) => value || null);
 const decimal = (value: string) => new Prisma.Decimal(value.replace(",", "."));
 
-export const familyOperationSchema = z.object({ type: z.enum(["INCOME", "EXPENSE"]), amount: positiveMoneyInput, operationDate: dateInput, categoryId, accountId: categoryId.nullable(), description: z.string().trim().max(500).default("") });
+export const familyOperationSchema = z.object({ type: z.enum(["INCOME", "EXPENSE"]), amount: positiveMoneyInput, operationDate: dateInput, categoryId, accountId: categoryId.nullable(), description: z.string().trim().max(500).default("") }).superRefine((value, context) => {
+  if (value.type === "INCOME" && !value.accountId) context.addIssue({ code: z.ZodIssueCode.custom, path: ["accountId"], message: "Для дохода выберите кошелёк поступления." });
+});
 const splitItemSchema = z.object({ id: z.string().cuid().optional(), categoryId, amount: positiveMoneyInput, description: z.string().trim().max(500).optional() });
 export const splitReceiptSchema = z.object({ totalAmount: positiveMoneyInput, operationDate: dateInput, accountId: categoryId.nullable(), description: z.string().trim().max(500).default(""), items: z.array(splitItemSchema).min(2).max(12) }).superRefine((value, context) => {
+  if (!value.accountId) context.addIssue({ code: z.ZodIssueCode.custom, path: ["accountId"], message: "Для расхода выберите кошелёк оплаты." });
   if (sumSplitReceipt(value.items) !== moneyToMinorUnits(value.totalAmount)) context.addIssue({ code: z.ZodIssueCode.custom, path: ["items"], message: "Сумма частей должна совпадать с общей суммой чека." });
 });
 export const recurringPaymentSchema = z.object({ name: z.string().trim().min(1, "Укажите название.").max(120), amount: positiveMoneyInput, categoryId: categoryId.nullable(), accountId: categoryId.nullable(), frequency: z.nativeEnum(RecurringFrequency), nextDueDate: dateInput, endDate: dateInput.nullable(), note: optionalText }).refine((value) => !value.endDate || value.endDate >= value.nextDueDate, { path: ["endDate"], message: "Дата окончания не может быть раньше следующего платежа." });

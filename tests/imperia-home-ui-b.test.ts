@@ -18,7 +18,7 @@ describe("FEVORA IMPERIA UI-B Home", () => {
   });
 
   it("keeps Home destinations wired to existing routes", () => {
-    for (const route of ["/money", "/money/new?project=FAMILY&kind=ENVELOPE", "/family/analytics"]) expect(home).toContain(route);
+    for (const route of ["/capital", "/money/envelopes", "/money/new?project=FAMILY&kind=ENVELOPE", "/analytics?module=FAMILY"]) expect(home).toContain(route);
   });
 
   it("includes dedicated responsive Home styles", () => {

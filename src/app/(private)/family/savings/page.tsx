@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function LegacySavingsPage() {
-  redirect("/money?project=FAMILY#envelopes");
+  redirect("/money/envelopes");
 }

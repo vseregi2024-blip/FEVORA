@@ -41,6 +41,13 @@ describe("FEVORA IMPERIA UI-C Clients", () => {
     expect(readFileSync(new URL("../src/components/imperia-client-marks-picker.tsx", import.meta.url), "utf8")).toContain("<details");
   });
 
+  it("uses the compact client profile composition without duplicate contact actions", () => {
+    for (const label of ["Контакты клиента", "Соцсети", "Откуда пришёл", "СЛЕДУЮЩАЯ ЗАПИСЬ", "ПОСЛЕДНИЙ ВИЗИТ", "История посещений", "Все процедуры", "Оплачено всего", "План клиента", "Beauty Bonus Club"]) expect(profile).toContain(label);
+    expect(profile).not.toContain("Нет ссылки");
+    expect(profile).not.toContain("Написать");
+    expect(profile).not.toContain("imperia-profile-sticky-actions");
+  });
+
   it("uses scoped reusable UI-C styles", () => {
     for (const selector of [".imperia-client-search", ".imperia-clients-total", ".imperia-client-card", ".imperia-client-profile"]) expect(css).toContain(selector);
   });

@@ -2,10 +2,10 @@ import type { MoneyAccountKind, MoneyAccountType } from "@prisma/client";
 
 type Value = { id?: string; name?: string; type?: MoneyAccountType; currency?: string; openingBalance?: string; targetAmount?: string; targetDate?: string; note?: string; icon?: string; categoryId?: string | null; isPrimary?: boolean };
 
-export function MoneyAccountForm({ action, projectCode, kind, value = {}, submitLabel, categories = [] }: { action: (data: FormData) => void | Promise<void>; projectCode: string; kind: MoneyAccountKind; value?: Value; submitLabel: string; categories?: Array<{ id: string; name: string }> }) {
+export function MoneyAccountForm({ action, projectCode, kind, value = {}, submitLabel, categories = [], returnTo }: { action: (data: FormData) => void | Promise<void>; projectCode: string; kind: MoneyAccountKind; value?: Value; submitLabel: string; categories?: Array<{ id: string; name: string }>; returnTo?: string }) {
   const wallet = kind === "WALLET";
   return <form action={action} className="transaction-form money-account-form">
-    {value.id && <input type="hidden" name="id" value={value.id}/>}<input type="hidden" name="projectCode" value={projectCode}/><input type="hidden" name="kind" value={kind}/>
+    {value.id && <input type="hidden" name="id" value={value.id}/>}<input type="hidden" name="projectCode" value={projectCode}/><input type="hidden" name="kind" value={kind}/>{returnTo && <input type="hidden" name="returnTo" value={returnTo}/>}
     <label>Название<input name="name" required autoFocus maxLength={80} defaultValue={value.name ?? ""} placeholder={wallet ? "Например: Mono" : "Например: На препараты"}/></label>
     {wallet ? <>
       <div className="form-grid"><label>Тип<select name="type" defaultValue={value.type ?? "CARD"}><option value="CASH">Наличные</option><option value="BANK">Банковский счёт</option><option value="CARD">Карта</option><option value="OTHER">Другой</option></select></label><label>Валюта<input name="currency" required minLength={3} maxLength={3} defaultValue={value.currency ?? "UAH"}/></label></div>

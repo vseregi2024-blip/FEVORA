@@ -1,7 +1,4 @@
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
-import { AppCard } from "@/components/ui/app-card";
-import { formatMoney } from "@/lib/money";
-import { requireUser } from "@/server/auth";
-
-export default async function SettingsPage(){const user=await requireUser();return <section className="settings"><p className="eyebrow">Настройки</p><h1>Профиль</h1><p className="muted">Данные вашего личного учёта.</p><AppCard><dl><div><dt>Email</dt><dd>{user.email}</dd></div><div><dt>Часовой пояс</dt><dd>{user.timezone}</dd></div><div><dt>Валюта</dt><dd>₴ {user.defaultCurrency}</dd></div><div><dt>Стартовый остаток</dt><dd>{formatMoney(user.startingBalance.toString(),user.defaultCurrency)}</dd></div></dl></AppCard><Link href="/money" className="project-card active money-settings-link"><b>Управление деньгами</b><span>Кошельки и конверты по каждому проекту.</span><em>Открыть →</em></Link><p className="summary-note">Редактирование профиля и пользовательских категорий появится в отдельной задаче.</p></section>}
+/** Legacy settings compatibility route. */
+export default function SettingsPage() { redirect("/family/settings"); }

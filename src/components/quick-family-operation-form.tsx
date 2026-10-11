@@ -23,13 +23,7 @@ export function QuickFamilyOperationForm({ categories, accounts, type, date, act
       </div>
     </details>
 
-    <details className="money-entry-details money-choice-details">
-      <summary><span>Счёт</span><b>Выбрать счёт</b></summary>
-      <div className="money-choice-list">
-        <label><input type="radio" name="accountId" value="" defaultChecked={!recurringPayment?.accountId}/><span>○</span><b>Без счёта</b></label>
-        {accounts.map((account) => <label key={account.id}><input type="radio" name="accountId" value={account.id} defaultChecked={account.id === recurringPayment?.accountId}/><span>◉</span><b>{account.name}</b></label>)}
-      </div>
-    </details>
+    <label className="money-account-select"><span>{type === "INCOME" ? "Кошелёк поступления" : "Счёт оплаты"}</span><select name="accountId" required={type === "INCOME"} defaultValue={recurringPayment?.accountId ?? ""}><option value="" disabled>Выберите кошелёк</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
 
     <section className="money-entry-details money-entry-note-fields">
       <header>Дата и комментарий</header>

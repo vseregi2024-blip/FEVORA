@@ -13,9 +13,10 @@ type ConfirmationDialogProps = {
   description: string;
   confirmLabel: string;
   triggerClassName?: string;
+  hiddenFields?: Record<string, string>;
 };
 
-export function ConfirmationDialog({ action, fieldName, fieldValue, trigger, title, description, confirmLabel, triggerClassName = "button danger" }: ConfirmationDialogProps) {
+export function ConfirmationDialog({ action, fieldName, fieldValue, trigger, title, description, confirmLabel, triggerClassName = "button danger", hiddenFields }: ConfirmationDialogProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -28,6 +29,7 @@ export function ConfirmationDialog({ action, fieldName, fieldValue, trigger, tit
           <p className="muted">{description}</p>
           <form action={action} className={styles.actions}>
             <input type="hidden" name={fieldName} value={fieldValue} />
+            {hiddenFields && Object.entries(hiddenFields).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
             <button className="button secondary" type="button" onClick={() => setOpen(false)}>Отмена</button>
             <button className="button danger" type="submit">{confirmLabel}</button>
           </form>

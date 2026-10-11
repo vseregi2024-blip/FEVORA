@@ -7,13 +7,15 @@ import { formatMoney } from "@/lib/money";
 
 export type CertificateOption = { id: string; certificateNumber: string; remainingAmount: string; expiresAt: string | null };
 export type BonusPaymentOption = { clientId: string; connected: boolean; balance: number | null; message?: string | null; requestKey?: string };
-type Props = { legend: string; limitAmount?: string; certificates?: CertificateOption[]; bonus?: BonusPaymentOption };
+type Props = { legend: string; limitAmount?: string; certificates?: CertificateOption[]; bonus?: BonusPaymentOption; compact?: boolean };
 const parseAmount = (value: string) => { const parsed = Number(value.replace(",", ".")); return Number.isFinite(parsed) && parsed > 0 ? parsed : 0; };
 
-export function CosmetologyPaymentComponentsFields({ legend, limitAmount, certificates = [], bonus }: Props) {
+export function CosmetologyPaymentComponentsFields({ legend, limitAmount, certificates = [], bonus, compact = false }: Props) {
   const [cash, setCash] = useState("0"), [mono, setMono] = useState("0"), [privat, setPrivat] = useState("0"), [other, setOther] = useState("0");
   const [certificateId, setCertificateId] = useState(""), [certificateAmount, setCertificateAmount] = useState("0"), [certificateQuery, setCertificateQuery] = useState("");
   const [bonusAmount, setBonusAmount] = useState("0");
+  const [compactMethod, setCompactMethod] = useState<"CASH" | "MONO" | "PRIVAT" | "OTHER">("CASH");
+  const [compactAmount, setCompactAmount] = useState("0"), [compactOtherComment, setCompactOtherComment] = useState("");
   const selected = certificates.find((certificate) => certificate.id === certificateId);
   const certificateLimit = selected ? Math.min(Number(selected.remainingAmount), limitAmount ? Number(limitAmount) : Number.POSITIVE_INFINITY) : 0;
   const bonusLimit = bonus?.connected && bonus.balance !== null ? Math.min(bonus.balance, limitAmount ? Number(limitAmount) : Number.POSITIVE_INFINITY) : 0;
@@ -22,6 +24,10 @@ export function CosmetologyPaymentComponentsFields({ legend, limitAmount, certif
   const certificateOverLimit = parseAmount(certificateAmount) > certificateLimit + 0.001;
   const bonusOverLimit = parseAmount(bonusAmount) > bonusLimit + 0.001;
   const filtered = certificates.filter((certificate) => certificate.certificateNumber.toLowerCase().includes(certificateQuery.trim().toLowerCase()));
+  if (compact) {
+    const amount = parseAmount(compactAmount);
+    return <fieldset className="cosmetology-payment-compact"><legend>{legend}</legend><div className="form-grid"><label>Способ<select value={compactMethod} onChange={(event) => setCompactMethod(event.target.value as typeof compactMethod)}><option value="CASH">Наличные</option><option value="MONO">Monobank</option><option value="PRIVAT">ПриватБанк</option><option value="OTHER">Прочее</option></select></label><label>Сумма<input inputMode="decimal" min="0" step="0.01" value={compactAmount} onChange={(event) => setCompactAmount(event.target.value)} placeholder="0,00"/></label></div>{compactMethod === "OTHER" && <label>Комментарий<input value={compactOtherComment} onChange={(event) => setCompactOtherComment(event.target.value)} required placeholder="Например: перевод"/></label>}<input type="hidden" name="cashAmount" value={compactMethod === "CASH" ? compactAmount : "0"}/><input type="hidden" name="monoAmount" value={compactMethod === "MONO" ? compactAmount : "0"}/><input type="hidden" name="privatAmount" value={compactMethod === "PRIVAT" ? compactAmount : "0"}/><input type="hidden" name="otherAmount" value={compactMethod === "OTHER" ? compactAmount : "0"}/><input type="hidden" name="otherComment" value={compactMethod === "OTHER" ? compactOtherComment : ""}/><input type="hidden" name="certificateAmount" value="0"/><input type="hidden" name="bonusAmount" value="0"/><input type="hidden" name="paymentTotal" value={amount.toFixed(2)}/></fieldset>;
+  }
   return <fieldset><legend>{legend}</legend><div className="form-grid">
     <label>Наличные<input name="cashAmount" inputMode="decimal" min="0" step="0.01" value={cash} onChange={(event) => setCash(event.target.value)}/></label>
     <label>Monobank<input name="monoAmount" inputMode="decimal" min="0" step="0.01" value={mono} onChange={(event) => setMono(event.target.value)}/></label>

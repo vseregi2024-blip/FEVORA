@@ -28,7 +28,7 @@ export function TopQuickNavigation({ pathname }: { pathname: string }) {
 
 export function ImperiaAppShell({ children, userName }: PropsWithChildren<{ userName?: string | null }>) {
   const pathname = usePathname();
-  const isImperia = pathname === "/projects" || pathname === "/safe" || pathname.startsWith("/safe/") || pathname === "/analytics" || pathname.startsWith("/analytics/") || pathname === "/money" || pathname.startsWith("/money/") || pathname === "/family" || pathname.startsWith("/family/") || pathname === "/cosmetology" || pathname.startsWith("/cosmetology/");
+  const isImperia = pathname === "/projects" || pathname === "/capital" || pathname.startsWith("/capital/") || pathname === "/safe" || pathname.startsWith("/safe/") || pathname === "/analytics" || pathname.startsWith("/analytics/") || pathname === "/money" || pathname.startsWith("/money/") || pathname === "/family" || pathname.startsWith("/family/") || pathname === "/cosmetology" || pathname.startsWith("/cosmetology/");
   if (!isImperia) return children;
   const isClientProfile = /^\/cosmetology\/clients\/[^/]+$/.test(pathname);
   const isNewClient = pathname === "/cosmetology/clients/new";
@@ -36,7 +36,7 @@ export function ImperiaAppShell({ children, userName }: PropsWithChildren<{ user
   const initial = (userName?.trim().charAt(0) || "F").toLocaleUpperCase("ru-RU");
   return <div className={`imperia-shell${isClientProfile ? " imperia-client-profile-shell" : ""}${isNewClient ? " imperia-new-client-shell" : ""}`}>
     {!isClientProfile && <header className="imperia-app-header">
-      <Link href="/family" className="imperia-brand" aria-label="FEVORA IMPERIA — Дом"><span className="imperia-crown"><img className="imperia-crown-logo" src="/assets/fevora-imperia-logo.png" alt=""/></span><span><b>FEVORA <em>IMPERIA</em></b><small>Больше, чем бизнес. Это ты.</small></span></Link>
+      <Link href="/family" className="imperia-brand" aria-label="FEVORA IMPERIA — Дом"><span className="imperia-crown"><img className="imperia-crown-logo" src="/icons/fevora-crown-512.png" alt=""/></span><span><b>FEVORA <em>IMPERIA</em></b><small>Больше, чем бизнес. Это ты.</small></span></Link>
       <div className="imperia-profile-tools"><span className="imperia-notification" aria-label="Уведомления"><AppIcon name="bell"/><i/></span><Link href="/family/settings" className="imperia-avatar" aria-label="Открыть настройки профиля">{initial}</Link></div>
     </header>}
     {!isClientProfile && <TopQuickNavigation pathname={pathname}/>}

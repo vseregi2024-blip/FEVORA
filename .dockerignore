@@ -3,3 +3,5 @@ node_modules
 .git
 .env
 npm-debug.log
+backups
+src/app/(private)/family/accounts/page 2.tsx
