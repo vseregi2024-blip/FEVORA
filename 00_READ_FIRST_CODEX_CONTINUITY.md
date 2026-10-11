@@ -1629,3 +1629,10 @@ C2.1A затем проверил весь authenticated production visit list �
 - Окна адаптированы под телефон как нижняя панель, имеют прокручиваемый список и не создают горизонтальный overflow. Локальная browser-проверка на мобильной ширине подтвердила открытие расходов и дня `02.10` с ожидаемыми суммами/категориями; финансовые формы не отправлялись и данные не менялись.
 - Проверки: полный Vitest suite `45 files / 379 tests` PASS; production `npm run build` PASS; `git diff --check` PASS.
 - GitHub/Railway/production, база данных, финансовые операции и loyalty не менялись; deploy не выполнялся. STOP: публикация улучшения аналитики требует отдельного явного поручения владельца.
+
+### 2026-10-11 — GitHub и Railway: опубликована детализация аналитики
+
+- По явному разрешению владельца улучшение `/analytics` отправлено в GitHub `vseregi2024-blip/FEVORA`, branch `main`, application commit `a3439f787c019fb0f1e776f5c2f74a56bc120cfb`.
+- Railway service `FEVORA` deployment `80bb128d-17f5-4a67-b2b2-b8c055fa38cc` завершён со статусом `SUCCESS`; предыдущий deployment штатно получил статус `REMOVED`.
+- Public `https://fevora-production.up.railway.app/api/health` после публикации вернул HTTP 200 `{"status":"ok"}`.
+- До публикации полный Vitest suite прошёл: `45 files / 379 tests`; production build и `git diff --check` — PASS. Миграции, seed и пользовательские финансовые/loyalty-данные не изменялись.
