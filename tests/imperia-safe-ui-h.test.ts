@@ -27,7 +27,7 @@ describe("FEVORA IMPERIA UI-H Safe and analytics", () => {
 
   it("places analytics on its own screen with requested filters and metrics", () => {
     const analyticsUi = `${analytics}\n${analyticsDetails}`;
-    for (const label of ["Период", "Направление", "Тип", "Категория", "Кошелёк", "Поступления", "Расходы", "Количество операций", "Движение денег"]) expect(analyticsUi).toContain(label);
+    for (const label of ["Период", "Направление", "Тип", "Категория", "Кошелёк", "Поступления", "Расходы", "Разница", "Внесено"]) expect(analyticsUi).toContain(label);
     expect(analytics).not.toContain("Средний приход");
     expect(projectNavigation).toContain('pathname === "/safe"');
     expect(projectNavigation).toContain('pathname === "/analytics"');
@@ -35,9 +35,11 @@ describe("FEVORA IMPERIA UI-H Safe and analytics", () => {
     expect(mobileNavigation).toContain('pathname.startsWith("/analytics")');
   });
 
-  it("opens period and day breakdowns from analytics totals and chart bars", () => {
+  it("shows an inline reconciliation ledger by days and categories", () => {
     expect(analytics).toContain("ImperiaAnalyticsDetails");
-    for (const label of ["Показать все поступления", "Показать все расходы", "Нажмите на день для расшифровки", "Поступления за период", "Расходы за период", "Расшифровка"]) expect(analyticsDetails).toContain(label);
-    expect(analyticsDetails).toContain("selectedDay.groups");
+    for (const label of ["Сверка операций", "Все ли доходы и расходы внесены?", "По дням", "По категориям", "расходов:"]) expect(analyticsDetails).toContain(label);
+    expect(analyticsDetails).toContain("dayTransactions.map");
+    expect(analyticsDetails).toContain("item.groupKey === group.key");
+    expect(analyticsDetails).not.toContain('role="dialog"');
   });
 });

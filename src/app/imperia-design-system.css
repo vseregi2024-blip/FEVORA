@@ -1500,3 +1500,58 @@ body:has(.imperia-client-profile-shell) { color: var(--imp-text); background: ra
   .money-envelope-add-form button { grid-column: auto; }
   .money-envelope-progress-card > p:not(.money-envelope-no-target) { font-size: .74rem; }
 }
+
+/* Analytics ledger: daily reconciliation first, category review second. */
+.imperia-analytics-filter-panel { border: 1px solid var(--imp-border); border-radius: 18px; overflow: hidden; background: var(--imp-gradient-glass); box-shadow: var(--imp-shadow-card); }
+.imperia-analytics-filter-panel > summary { min-height: 58px; padding: 0 17px; display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--imp-text); cursor: pointer; font-weight: 850; list-style: none; }
+.imperia-analytics-filter-panel > summary::-webkit-details-marker { display: none; }
+.imperia-analytics-filter-panel > summary::after { content: "+"; color: var(--imp-pink); font-size: 1.25rem; }
+.imperia-analytics-filter-panel[open] > summary::after { content: "−"; }
+.imperia-analytics-filter-panel > summary span { margin-left: auto; color: var(--imp-muted); font-size: .75rem; font-weight: 700; }
+.imperia-analytics-filter-panel .imperia-analytics-filters { border: 0; border-top: 1px solid var(--imp-border); border-radius: 0; box-shadow: none; background: rgb(10 8 32 / 34%); }
+.imperia-analytics-summary article { min-width: 0; }
+.imperia-analytics-summary article b { overflow-wrap: anywhere; }
+.imperia-ledger { border: 1px solid var(--imp-border); border-radius: 24px; overflow: hidden; background: var(--imp-gradient-glass); box-shadow: var(--imp-shadow-card); }
+.imperia-ledger > header { padding: 18px; display: flex; align-items: end; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--imp-border); }
+.imperia-ledger > header small { color: var(--imp-pink); font-size: .7rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.imperia-ledger > header h2 { margin: 4px 0 0; font-size: 1.18rem; }
+.imperia-ledger > header nav { padding: 4px; display: flex; gap: 4px; border: 1px solid var(--imp-border); border-radius: 13px; background: rgb(8 8 28 / 56%); }
+.imperia-ledger > header nav button { min-height: 38px; padding: 0 13px; border: 0; border-radius: 9px; color: var(--imp-muted); background: transparent; font-size: .74rem; font-weight: 850; cursor: pointer; }
+.imperia-ledger > header nav button.active { color: white; background: linear-gradient(135deg, #8d34f5, #ef3eb2); box-shadow: 0 7px 20px rgb(211 47 188 / 28%); }
+.imperia-ledger-days, .imperia-ledger-categories { padding: 12px; display: grid; gap: 9px; }
+.imperia-ledger-days > details, .imperia-ledger-categories > details { border: 1px solid rgb(130 93 207 / 30%); border-radius: 16px; overflow: hidden; background: rgb(17 14 49 / 62%); }
+.imperia-ledger-days > details > summary, .imperia-ledger-categories > details > summary { min-width: 0; padding: 13px 14px; display: grid; align-items: center; gap: 10px; cursor: pointer; list-style: none; }
+.imperia-ledger-days > details > summary::-webkit-details-marker, .imperia-ledger-categories > details > summary::-webkit-details-marker { display: none; }
+.imperia-ledger-days > details > summary { grid-template-columns: minmax(0, 1fr) auto; }
+.imperia-ledger-days > details > summary > span:first-child { min-width: 0; display: grid; gap: 3px; }
+.imperia-ledger-days > details > summary b { text-transform: capitalize; }
+.imperia-ledger-days > details > summary small, .imperia-ledger-categories > details > summary small { color: var(--imp-muted); font-size: .69rem; }
+.imperia-ledger-day-totals { display: grid; grid-template-columns: repeat(3, auto); align-items: center; gap: 9px; text-align: right; }
+.imperia-ledger-day-totals em { font-size: .7rem; font-style: normal; font-weight: 800; }
+.imperia-ledger-day-totals strong { min-width: 82px; font-size: .88rem; }
+.imperia-ledger-days > details > div, .imperia-ledger-categories > details > div { border-top: 1px solid var(--imp-border); }
+.imperia-ledger-operation { min-width: 0; padding: 12px 14px; display: grid; grid-template-columns: 9px minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.imperia-ledger-operation + .imperia-ledger-operation { border-top: 1px solid rgb(118 89 183 / 19%); }
+.imperia-ledger-operation > i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 12px currentColor; }
+.imperia-ledger-operation > span { min-width: 0; display: grid; gap: 2px; }
+.imperia-ledger-operation b, .imperia-ledger-operation small, .imperia-ledger-operation em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.imperia-ledger-operation b { font-size: .84rem; }
+.imperia-ledger-operation small { color: var(--imp-text-soft); font-size: .76rem; }
+.imperia-ledger-operation em { color: var(--imp-muted); font-size: .65rem; font-style: normal; }
+.imperia-ledger-operation > strong { font-size: .82rem; white-space: nowrap; }
+.imperia-ledger-categories > details > summary { grid-template-columns: 32px minmax(0, 1fr) auto; }
+.imperia-ledger-categories > details > summary > i { width: 30px; height: 30px; border: 1px solid currentColor; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 900; }
+.imperia-ledger-categories > details > summary > span { min-width: 0; display: grid; gap: 2px; }
+.imperia-ledger-categories > details > summary > strong { font-size: .88rem; white-space: nowrap; }
+@media (max-width: 680px) {
+  .imperia-ledger { border-radius: 19px; }
+  .imperia-ledger > header { padding: 14px; align-items: stretch; flex-direction: column; }
+  .imperia-ledger > header nav { display: grid; grid-template-columns: 1fr 1fr; }
+  .imperia-ledger-days, .imperia-ledger-categories { padding: 8px; gap: 7px; }
+  .imperia-ledger-days > details > summary { grid-template-columns: 1fr; }
+  .imperia-ledger-day-totals { grid-template-columns: auto auto minmax(82px, 1fr); text-align: left; }
+  .imperia-ledger-day-totals strong { text-align: right; }
+  .imperia-ledger-operation { padding: 11px 10px; gap: 8px; }
+  .imperia-ledger-operation > strong { font-size: .75rem; }
+  .imperia-ledger-categories > details > summary { padding: 12px 10px; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 8px; }
+}
