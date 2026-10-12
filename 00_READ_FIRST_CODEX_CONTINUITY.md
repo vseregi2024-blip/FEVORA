@@ -1645,3 +1645,10 @@ C2.1A затем проверил весь authenticated production visit list �
 - Локальная mobile browser-проверка подтвердила оба режима, раскрытие категории и отсутствие horizontal overflow (`scrollWidth = clientWidth`). Финансовые формы не отправлялись, данные не менялись.
 - Проверки: focused analytics tests `4/4` PASS; полный Vitest suite `45 files / 379 tests` PASS; production build PASS; `git diff --check` PASS.
 - GitHub/Railway/production, база данных, операции и loyalty не менялись; deploy не выполнялся. STOP: публикация нового журнала аналитики требует отдельного явного поручения владельца.
+
+### 2026-10-12 — GitHub и Railway: опубликован журнал ежедневной сверки
+
+- По явному поручению владельца новый экран `/analytics` опубликован в GitHub `vseregi2024-blip/FEVORA`, branch `main`, application commit `fc65c80054614148e26ef9ead74d5d5025d7d757`.
+- Railway service `FEVORA` deployment `428c4b54-6dce-45da-b883-10661c77bc62` завершён со статусом `SUCCESS`; предыдущий deployment штатно получил статус `REMOVED`.
+- Public `https://fevora-production.up.railway.app/api/health` после переключения вернул HTTP 200 `{"status":"ok"}`.
+- Публикация не запускала пользовательские формы и не меняла финансовые операции, визиты, клиентов, бонусы или loyalty feature flags.
