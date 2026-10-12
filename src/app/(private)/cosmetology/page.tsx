@@ -15,7 +15,7 @@ export default async function CosmetologyPage() {
   const [month, daily, appointments, money, calendarTransactions] = await Promise.all([
     getCosmetologyDashboard(user.id, "MONTH"), getCosmetologyDashboard(user.id, "TODAY"), getCosmetologyAppointments(user.id), getMoneyWorkspace(user.id, FinanceModule.COSMETOLOGY), getCalendarTransactions(user.id),
   ]);
-  const procurementEnvelope = money.accounts.find((account) => account.kind === MoneyAccountKind.ENVELOPE && account.isActive && /закуп/i.test(account.name));
+  const procurementEnvelope = money.accounts.find((account) => account.kind === MoneyAccountKind.ENVELOPE && account.isActive && /закуп|препарат/i.test(account.name));
   const todayStart = new Date(`${today}T00:00:00.000Z`);
   const todayEnd = new Date(`${today}T23:59:59.999Z`);
   const procurementToday = procurementEnvelope ? await prisma.moneyLedgerEntry.aggregate({

@@ -22,7 +22,9 @@ describe("cosmetology UI uses the accepted shared money presentation", () => {
     expect(completionForm).toContain("Свободно:");
     expect(completionForm).toContain("procurementExceedsPayment");
     expect(visitPage).toContain("wallets={money.wallets.map");
-    expect(visitPage).toContain("procurementEnvelope={money.procurementEnvelope");
+    expect(completionForm).toContain('name="procurementEnvelopeId"');
+    expect(visitPage).toContain("procurementEnvelopes={money.procurementEnvelopes.map");
+    expect(visitPage).toContain("defaultProcurementEnvelopeId={money.procurementEnvelope?.id");
   });
 
   it("keeps the procurement-envelope fallback only for a missing envelope and exposes item history", () => {

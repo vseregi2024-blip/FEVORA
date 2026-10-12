@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
 
-import { appointmentSchema, payVisitSchema, paymentComponents } from "../src/server/cosmetology";
+import { appointmentSchema, completeVisitSchema, payVisitSchema, paymentComponents } from "../src/server/cosmetology";
 
 const payment = (overrides: Record<string, unknown> = {}) => ({
   cashAmount: "0",
@@ -53,5 +53,12 @@ describe("PAYMENT 2.0 component validation", () => {
     expect(mixed.success).toBe(true);
     expect(paymentComponents(mixed.data!).map((item) => item.method)).toEqual(["CASH", "CERTIFICATE"]);
     expect(paymentComponents(mixed.data!)[1]).toMatchObject({ certificateId: "cmtvunb6v0001iipe7epcl07t", wallet: null });
+  });
+
+  it("requires an explicit envelope only when procedure income is reserved", () => {
+    const base = { id: "cmtwk2glz0005pl4xaht37vtp", paymentAmount: "5000", operationDate: "2026-10-12", comment: null, moneyAccountId: "cmtvunb6v0001iipe7epcl07t", ...payment({ cashAmount: "5000", paymentTotal: "5000" }) };
+    expect(completeVisitSchema.safeParse({ ...base, procurementAmount: "0" }).success).toBe(true);
+    expect(completeVisitSchema.safeParse({ ...base, procurementAmount: "600" }).success).toBe(false);
+    expect(completeVisitSchema.safeParse({ ...base, procurementAmount: "600", procurementEnvelopeId: "cmtwk2glz0005pl4xaht37vtp" }).success).toBe(true);
   });
 });

@@ -16,9 +16,12 @@ describe("cosmetology uses the shared money core", () => {
 
   it("reserves procedure income without an expense and purchases consume one transaction", () => {
     expect(server).toContain("procurementAmount");
+    expect(server).toContain("procurementEnvelopeId");
+    expect(server).toContain("Выберите активный конверт для резерва на препараты.");
+    expect(server).not.toContain('project: { code: FinanceModule.COSMETOLOGY }, name: { contains: "закуп"');
     expect(server).toContain("await db.cosmetologyExpense.create");
     expect(server).not.toContain("await createVisitUsages(");
-    expect(server).toContain("В конверте «На закупку» недостаточно средств.");
+    expect(server).toContain("В конверте резерва недостаточно средств.");
   });
 
   it("uses general wallets and the shared procurement envelope in the purchase UI", () => {
