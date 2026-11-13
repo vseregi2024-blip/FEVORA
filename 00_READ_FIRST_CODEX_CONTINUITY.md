@@ -1667,3 +1667,20 @@ C2.1A затем проверил весь authenticated production visit list �
 - Railway service `FEVORA` deployment `63833701-2951-4953-bbcf-19795e272044` завершён со статусом `SUCCESS`; публичный `/api/health` вернул HTTP 200.
 - Production read-only проверка существующей активной записи «Ботокс» подтвердила новый список «Конверт для резерва»: доступны все активные конверты, а «На препараты» выбран автоматически. Форма показывает «Резерв поступит в „На препараты“». Кнопка проведения не нажималась.
 - Пользовательские визиты, деньги, резерв, склад, бонусы и loyalty feature flags во время deployment verification не изменялись.
+
+### 2026-11-13 — Docker Desktop: recovery-bundle перед удалением
+
+- Созданы свежие custom-format logical dumps всех четырёх локальных PostgreSQL application databases: `fevora_local_ui` (PostgreSQL 16.15), `fevora` (18.6), `fevora_voice_smoke` (16.15) и `fevora_smoke` (18.6). Для каждого кластера также сохранены `postgres.dump`, roles-only `globals.sql` без паролей и source summary.
+- Bundle сохранён вне Docker volumes: `backups/docker-removal-2026-11-13/`; переносимый архив: `backups/docker-removal-2026-11-13.tar.gz`; рядом сохранён SHA-256 архива. Внутри bundle есть `SHA256SUMS`, sanitized container config и полная инструкция восстановления.
+- Все custom archives прошли `pg_restore --list`. Каждая application database и maintenance database восстановлена с `--exit-on-error` в отдельном новом изолированном контейнере той же major-версии PostgreSQL. Количество public tables source/restored совпало: 60/60, 58/58, 54/54, 53/53.
+- Исходные четыре контейнера после дампа возвращены в stopped state. Четыре restore-check контейнера и их новые volumes намеренно оставлены существующими, но остановлены: по условию задачи ничего не удалялось.
+- Railway production, production PostgreSQL, deployment, migrations, seed, приложение и пользовательские production-данные не читались и не изменялись в рамках backup/restore процедуры. Локальные данные не импортировались в Railway.
+- STOP: Docker Desktop можно удалять только после копирования `.tar.gz` и `.sha256` на внешний диск и повторной проверки checksum на внешнем носителе. До отдельного подтверждения не удалять контейнеры, volumes, images или Docker Desktop.
+
+### 2026-11-13 — KINGSTON: внешняя копия Docker recovery-bundle проверена
+
+- Внешний диск подтверждён по пути `/Volumes/KINGSTON`; создана папка `/Volumes/KINGSTON/FEVORA_BACKUP_2026-11-13`.
+- На KINGSTON без удаления исходников скопированы `docker-removal-2026-11-13.tar.gz` (145186 bytes) и `docker-removal-2026-11-13.tar.gz.sha256` (99 bytes).
+- SHA-256 внешнего архива совпал с ожидаемым: `ba02beb9db85e0cb2002f76068acc90b323148eef460cf7c93b02141ab90794d`. Архив и checksum-файл побайтно совпали с локальными исходниками.
+- Чтение непосредственно с KINGSTON прошло: `gzip -t` PASS, `tar -tzf` PASS, в архиве 54 entries. Предупреждение `cp -p` касалось только неподдерживаемого файловой системой macOS `chflags`; содержимое файлов не повреждено.
+- Ничего не удалялось и не форматировалось. Railway, GitHub, production и локальные Docker objects не изменялись.
