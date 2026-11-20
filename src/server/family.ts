@@ -1,6 +1,6 @@
 import "server-only";
 
-import { CategoryKind, FinanceModule, Prisma, RecurringFrequency } from "@prisma/client";
+import { CategoryKind, FinanceModule, MoneyAccountKind, MoneyLedgerEntryType, Prisma, RecurringFrequency, TransactionType } from "@prisma/client";
 import { z } from "zod";
 
 import { calculateFamilyTotals, calendarMonthsInRange, nextRecurringDate, periodStart, recurringOccurrences, sumSplitReceipt } from "@/features/family/calculations";
@@ -15,7 +15,7 @@ const optionalText = z.string().trim().max(500).nullable().transform((value) => 
 const decimal = (value: string) => new Prisma.Decimal(value.replace(",", "."));
 
 export const familyOperationSchema = z.object({ type: z.enum(["INCOME", "EXPENSE"]), amount: positiveMoneyInput, operationDate: dateInput, categoryId, accountId: categoryId.nullable(), description: z.string().trim().max(500).default("") }).superRefine((value, context) => {
-  if (value.type === "INCOME" && !value.accountId) context.addIssue({ code: z.ZodIssueCode.custom, path: ["accountId"], message: "Для дохода выберите кошелёк поступления." });
+  if (!value.accountId) context.addIssue({ code: z.ZodIssueCode.custom, path: ["accountId"], message: value.type === "INCOME" ? "Для дохода выберите кошелёк поступления." : "Для расхода выберите кошелёк оплаты." });
 });
 const splitItemSchema = z.object({ id: z.string().cuid().optional(), categoryId, amount: positiveMoneyInput, description: z.string().trim().max(500).optional() });
 export const splitReceiptSchema = z.object({ totalAmount: positiveMoneyInput, operationDate: dateInput, accountId: categoryId.nullable(), description: z.string().trim().max(500).default(""), items: z.array(splitItemSchema).min(2).max(12) }).superRefine((value, context) => {
@@ -29,6 +29,47 @@ export const familyAccountSchema = z.object({ name: z.string().trim().min(1, "У
 async function assertFamilyCategory(userId: string, selectedCategoryId: string, type: "INCOME" | "EXPENSE") {
   const category = await prisma.category.findFirst({ where: { id: selectedCategoryId, module: FinanceModule.FAMILY, isArchived: false, OR: [{ userId }, { userId: null }] } });
   if (!category || (category.kind !== "BOTH" && category.kind !== type)) throw new Error("Выберите доступную категорию Family.");
+}
+type FamilyDatabase = Prisma.TransactionClient | typeof prisma;
+
+async function assertFamilyWallet(database: FamilyDatabase, userId: string, selectedAccountId: string | null) {
+  if (!selectedAccountId) throw new Error("Выберите кошелёк Family.");
+  const wallet = await database.moneyAccount.findFirst({
+    where: { id: selectedAccountId, userId, isActive: true, kind: MoneyAccountKind.WALLET, project: { code: FinanceModule.FAMILY } },
+  });
+  if (!wallet) throw new Error("Выберите активный кошелёк Family.");
+  return wallet;
+}
+
+function ledgerValues(type: "INCOME" | "EXPENSE", amount: Prisma.Decimal) {
+  return type === TransactionType.INCOME
+    ? { type: MoneyLedgerEntryType.INCOME, amount }
+    : { type: MoneyLedgerEntryType.EXPENSE, amount: amount.neg() };
+}
+
+async function createFamilyTransaction(database: Prisma.TransactionClient, userId: string, wallet: Awaited<ReturnType<typeof assertFamilyWallet>>, input: z.infer<typeof familyOperationSchema>, extra: { receiptId?: string; recurringPaymentId?: string; voiceRequestId?: string } = {}) {
+  const amount = decimal(input.amount);
+  const operationDate = dateFromInput(input.operationDate);
+  const transaction = await database.transaction.create({
+    data: { userId, type: input.type, amount, currency: wallet.currency, operationDate, module: FinanceModule.FAMILY, categoryId: input.categoryId, familyAccountId: null, moneyAccountId: wallet.id, description: input.description || null, source: "WEB", ...extra },
+    include: { category: true, familyAccount: true, moneyAccount: true },
+  });
+  await database.moneyLedgerEntry.create({
+    data: { userId, projectId: wallet.projectId, accountId: wallet.id, transactionId: transaction.id, ...ledgerValues(input.type, amount), currency: wallet.currency, operationDate },
+  });
+  return transaction;
+}
+
+async function reverseTransactionLedger(database: Prisma.TransactionClient, userId: string, transactionIds: string[], reversedAt: Date) {
+  if (!transactionIds.length) return;
+  await database.moneyLedgerEntry.updateMany({ where: { userId, transactionId: { in: transactionIds }, reversedAt: null }, data: { reversedAt } });
+}
+const submissionId = (value?: string) => value ? z.string().uuid().parse(value) : undefined;
+const isUniqueConflict = (error: unknown) => error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+
+async function existingSubmission(userId: string, requestId?: string) {
+  if (!requestId) return null;
+  return prisma.transaction.findUnique({ where: { userId_voiceRequestId: { userId, voiceRequestId: requestId } }, include: { category: true, familyAccount: true, moneyAccount: true } });
 }
 async function assertFamilyAccount(userId: string, selectedAccountId: string | null) {
   if (!selectedAccountId) return;
@@ -46,76 +87,122 @@ async function canManageFamilyCategory(userId: string, id: string) {
   return userCount === 1 ? category : null;
 }
 
-export async function createFamilyOperation(userId: string, input: z.infer<typeof familyOperationSchema>) {
+export async function createFamilyOperation(userId: string, input: z.infer<typeof familyOperationSchema>, rawSubmissionId?: string) {
+  const requestId = submissionId(rawSubmissionId);
+  const duplicate = await existingSubmission(userId, requestId);
+  if (duplicate) return duplicate;
   await assertFamilyCategory(userId, input.categoryId, input.type);
-  await assertFamilyAccount(userId, input.accountId);
-  return prisma.transaction.create({ data: { userId, type: input.type, amount: decimal(input.amount), operationDate: dateFromInput(input.operationDate), module: FinanceModule.FAMILY, categoryId: input.categoryId, familyAccountId: input.accountId, description: input.description || null, source: "WEB" }, include: { category: true, familyAccount: true } });
+  try {
+    return await prisma.$transaction(async (database) => {
+      const wallet = await assertFamilyWallet(database, userId, input.accountId);
+      return createFamilyTransaction(database, userId, wallet, input, requestId ? { voiceRequestId: requestId } : {});
+    });
+  } catch (error) {
+    if (requestId && isUniqueConflict(error)) return prisma.transaction.findUniqueOrThrow({ where: { userId_voiceRequestId: { userId, voiceRequestId: requestId } }, include: { category: true, familyAccount: true, moneyAccount: true } });
+    throw error;
+  }
 }
-export async function payRecurringFromFamily(userId: string, recurringPaymentId: string, input: z.infer<typeof familyOperationSchema>) {
+export async function payRecurringFromFamily(userId: string, recurringPaymentId: string, input: z.infer<typeof familyOperationSchema>, rawSubmissionId?: string) {
+  const requestId = submissionId(rawSubmissionId);
+  const duplicate = await existingSubmission(userId, requestId);
+  if (duplicate) return duplicate;
   if (input.type !== "EXPENSE") throw new Error("Обязательный платёж можно оплатить только расходом.");
-  await assertFamilyCategory(userId, input.categoryId, "EXPENSE"); await assertFamilyAccount(userId, input.accountId);
-  return prisma.$transaction(async (database) => {
-    const payment = await database.recurringPayment.findFirst({ where: { id: recurringPaymentId, userId, isActive: true, archivedAt: null } });
-    if (!payment) throw new Error("Обязательный платёж не найден.");
-    const dueDate = payment.nextDueDate; const nextDate = nextRecurringDate(dueDate, payment.frequency); const remainsActive = !payment.endDate || nextDate <= payment.endDate;
-    const claimed = await database.recurringPayment.updateMany({ where: { id: payment.id, userId, isActive: true, nextDueDate: dueDate }, data: { nextDueDate: nextDate, isActive: remainsActive } });
-    if (claimed.count !== 1) throw new Error("Этот платёж уже обработан.");
-    return database.transaction.create({ data: { userId, type: "EXPENSE", amount: decimal(input.amount), operationDate: dateFromInput(input.operationDate), module: FinanceModule.FAMILY, categoryId: input.categoryId, familyAccountId: input.accountId, description: input.description || payment.name, recurringPaymentId: payment.id, source: "WEB" }, include: { category: true, familyAccount: true } });
-  });
+  await assertFamilyCategory(userId, input.categoryId, "EXPENSE");
+  try {
+    return await prisma.$transaction(async (database) => {
+      const wallet = await assertFamilyWallet(database, userId, input.accountId);
+      const payment = await database.recurringPayment.findFirst({ where: { id: recurringPaymentId, userId, isActive: true, archivedAt: null } });
+      if (!payment) throw new Error("Обязательный платёж не найден.");
+      const dueDate = payment.nextDueDate; const nextDate = nextRecurringDate(dueDate, payment.frequency); const remainsActive = !payment.endDate || nextDate <= payment.endDate;
+      const claimed = await database.recurringPayment.updateMany({ where: { id: payment.id, userId, isActive: true, nextDueDate: dueDate }, data: { nextDueDate: nextDate, isActive: remainsActive } });
+      if (claimed.count !== 1) throw new Error("Этот платёж уже обработан.");
+      return createFamilyTransaction(database, userId, wallet, { ...input, description: input.description || payment.name }, { recurringPaymentId: payment.id, ...(requestId ? { voiceRequestId: requestId } : {}) });
+    });
+  } catch (error) {
+    if (requestId && isUniqueConflict(error)) return prisma.transaction.findUniqueOrThrow({ where: { userId_voiceRequestId: { userId, voiceRequestId: requestId } }, include: { category: true, familyAccount: true, moneyAccount: true } });
+    throw error;
+  }
 }
 export async function createVoiceFamilyOperation(userId: string, voiceRequestId: string, input: z.infer<typeof familyOperationSchema>) {
   const requestId = z.string().uuid().parse(voiceRequestId);
+  const duplicate = await existingSubmission(userId, requestId);
+  if (duplicate) return duplicate;
   await assertFamilyCategory(userId, input.categoryId, input.type);
-  await assertFamilyAccount(userId, input.accountId);
-  return prisma.transaction.upsert({
-    where: { userId_voiceRequestId: { userId, voiceRequestId: requestId } },
-    update: {},
-    create: { userId, type: input.type, amount: decimal(input.amount), operationDate: dateFromInput(input.operationDate), module: FinanceModule.FAMILY, categoryId: input.categoryId, familyAccountId: input.accountId, description: input.description || null, source: "WEB", voiceRequestId: requestId },
-    include: { category: true, familyAccount: true },
-  });
+  try {
+    return await prisma.$transaction(async (database) => {
+      const wallet = await assertFamilyWallet(database, userId, input.accountId);
+      return createFamilyTransaction(database, userId, wallet, input, { voiceRequestId: requestId });
+    });
+  } catch (error) {
+    if (isUniqueConflict(error)) return prisma.transaction.findUniqueOrThrow({ where: { userId_voiceRequestId: { userId, voiceRequestId: requestId } }, include: { category: true, familyAccount: true, moneyAccount: true } });
+    throw error;
+  }
 }
 export async function updateFamilyOperation(userId: string, id: string, input: z.infer<typeof familyOperationSchema>) {
   const current = await prisma.transaction.findFirst({ where: { id, userId, module: FinanceModule.FAMILY, deletedAt: null } });
   if (!current) throw new Error("Операция Family не найдена.");
   if (current.receiptId || current.recurringPaymentId) throw new Error("Связанную операцию нужно изменять в её исходном разделе.");
   await assertFamilyCategory(userId, input.categoryId, input.type);
-  await assertFamilyAccount(userId, input.accountId);
-  return prisma.transaction.update({ where: { id }, data: { type: input.type, amount: decimal(input.amount), operationDate: dateFromInput(input.operationDate), categoryId: input.categoryId, familyAccountId: input.accountId, description: input.description || null }, include: { category: true, familyAccount: true } });
+  return prisma.$transaction(async (database) => {
+    const wallet = await assertFamilyWallet(database, userId, input.accountId);
+    const amount = decimal(input.amount); const operationDate = dateFromInput(input.operationDate);
+    const transaction = await database.transaction.update({ where: { id }, data: { type: input.type, amount, currency: wallet.currency, operationDate, categoryId: input.categoryId, familyAccountId: null, moneyAccountId: wallet.id, description: input.description || null }, include: { category: true, familyAccount: true, moneyAccount: true } });
+    const entry = await database.moneyLedgerEntry.findFirst({ where: { userId, transactionId: id, reversedAt: null } });
+    const data = { projectId: wallet.projectId, accountId: wallet.id, ...ledgerValues(input.type, amount), currency: wallet.currency, operationDate };
+    if (entry) await database.moneyLedgerEntry.update({ where: { id: entry.id }, data });
+    else await database.moneyLedgerEntry.create({ data: { userId, transactionId: id, ...data } });
+    return transaction;
+  });
 }
 export async function softDeleteFamilyOperation(userId: string, id: string) {
   const current = await prisma.transaction.findFirst({ where: { id, userId, module: FinanceModule.FAMILY, deletedAt: null } });
   if (!current) throw new Error("Операция Family не найдена.");
   if (current.receiptId || current.recurringPaymentId) throw new Error("Связанную операцию нужно удалить в её исходном разделе.");
-  return prisma.transaction.update({ where: { id }, data: { deletedAt: new Date() } });
+  return prisma.$transaction(async (database) => {
+    const deletedAt = new Date();
+    await reverseTransactionLedger(database, userId, [id], deletedAt);
+    return database.transaction.update({ where: { id }, data: { deletedAt } });
+  });
 }
 
 export async function createSplitReceipt(userId: string, input: z.infer<typeof splitReceiptSchema>) {
   for (const item of input.items) await assertFamilyCategory(userId, item.categoryId, "EXPENSE");
-  await assertFamilyAccount(userId, input.accountId);
   return prisma.$transaction(async (database) => {
+    const wallet = await assertFamilyWallet(database, userId, input.accountId);
     const receipt = await database.receipt.create({ data: { userId, totalAmount: decimal(input.totalAmount), description: input.description || null, operationDate: dateFromInput(input.operationDate) } });
-    const transactions = await Promise.all(input.items.map((item) => database.transaction.create({ data: { userId, type: "EXPENSE", amount: decimal(item.amount), operationDate: dateFromInput(input.operationDate), module: FinanceModule.FAMILY, categoryId: item.categoryId, familyAccountId: input.accountId, description: item.description || input.description || null, receiptId: receipt.id, source: "WEB" }, include: { category: true, familyAccount: true } })));
+    const transactions = [];
+    for (const item of input.items) transactions.push(await createFamilyTransaction(database, userId, wallet, { type: "EXPENSE", amount: item.amount, operationDate: input.operationDate, categoryId: item.categoryId, accountId: wallet.id, description: item.description || input.description || "" }, { receiptId: receipt.id }));
     return { receipt, transactions };
   });
 }
 export async function getSplitReceipt(userId: string, id: string) {
-  const receipt = await prisma.receipt.findFirst({ where: { id, userId, deletedAt: null }, include: { transactions: { where: { deletedAt: null }, include: { category: true, familyAccount: true }, orderBy: { createdAt: "asc" } } } });
+  const receipt = await prisma.receipt.findFirst({ where: { id, userId, deletedAt: null }, include: { transactions: { where: { deletedAt: null }, include: { category: true, familyAccount: true, moneyAccount: true }, orderBy: { createdAt: "asc" } } } });
   if (!receipt) throw new Error("Чек не найден."); return receipt;
 }
 export async function updateSplitReceipt(userId: string, id: string, input: z.infer<typeof splitReceiptSchema>) {
   for (const item of input.items) await assertFamilyCategory(userId, item.categoryId, "EXPENSE");
-  await assertFamilyAccount(userId, input.accountId);
   if (!await prisma.receipt.findFirst({ where: { id, userId, deletedAt: null } })) throw new Error("Чек не найден.");
   return prisma.$transaction(async (database) => {
-    await database.transaction.updateMany({ where: { receiptId: id, userId, deletedAt: null }, data: { deletedAt: new Date() } });
+    const wallet = await assertFamilyWallet(database, userId, input.accountId);
+    const active = await database.transaction.findMany({ where: { receiptId: id, userId, deletedAt: null }, select: { id: true } });
+    const deletedAt = new Date();
+    await reverseTransactionLedger(database, userId, active.map((item) => item.id), deletedAt);
+    await database.transaction.updateMany({ where: { receiptId: id, userId, deletedAt: null }, data: { deletedAt } });
     const receipt = await database.receipt.update({ where: { id }, data: { totalAmount: decimal(input.totalAmount), operationDate: dateFromInput(input.operationDate), description: input.description || null } });
-    await Promise.all(input.items.map((item) => database.transaction.create({ data: { userId, type: "EXPENSE", amount: decimal(item.amount), operationDate: dateFromInput(input.operationDate), module: FinanceModule.FAMILY, categoryId: item.categoryId, familyAccountId: input.accountId, description: item.description || input.description || null, receiptId: id, source: "WEB" } })));
+    for (const item of input.items) await createFamilyTransaction(database, userId, wallet, { type: "EXPENSE", amount: item.amount, operationDate: input.operationDate, categoryId: item.categoryId, accountId: wallet.id, description: item.description || input.description || "" }, { receiptId: id });
     return receipt;
   });
 }
 export async function deleteSplitReceipt(userId: string, id: string) {
   if (!await prisma.receipt.findFirst({ where: { id, userId, deletedAt: null } })) throw new Error("Чек не найден.");
-  return prisma.$transaction([prisma.receipt.update({ where: { id }, data: { deletedAt: new Date() } }), prisma.transaction.updateMany({ where: { receiptId: id, userId, deletedAt: null }, data: { deletedAt: new Date() } })]);
+  return prisma.$transaction(async (database) => {
+    const active = await database.transaction.findMany({ where: { receiptId: id, userId, deletedAt: null }, select: { id: true } });
+    const deletedAt = new Date();
+    await reverseTransactionLedger(database, userId, active.map((item) => item.id), deletedAt);
+    const receipt = await database.receipt.update({ where: { id }, data: { deletedAt } });
+    await database.transaction.updateMany({ where: { receiptId: id, userId, deletedAt: null }, data: { deletedAt } });
+    return receipt;
+  });
 }
 
 export async function getFamilyCategories(userId: string, type?: "INCOME" | "EXPENSE", includeArchived = false) {
@@ -146,6 +233,18 @@ export async function moveFamilyCategory(userId: string, id: string, direction: 
 export async function getFamilyAccounts(userId: string, includeArchived = false) {
   return prisma.familyAccount.findMany({ where: { userId, ...(includeArchived ? {} : { isArchived: false }) }, orderBy: [{ sortOrder: "asc" }, { name: "asc" }] });
 }
+export async function getFamilyWallets(userId: string, includeArchived = false) {
+  return prisma.moneyAccount.findMany({
+    where: { userId, kind: MoneyAccountKind.WALLET, project: { code: FinanceModule.FAMILY }, ...(includeArchived ? {} : { isActive: true }) },
+    orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+}
+export async function getPrimaryFamilyWallet(userId: string) {
+  return prisma.moneyAccount.findFirst({
+    where: { userId, kind: MoneyAccountKind.WALLET, isActive: true, isPrimary: true, project: { code: FinanceModule.FAMILY } },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+  });
+}
 export async function createFamilyAccount(userId: string, input: z.infer<typeof familyAccountSchema>) {
   const name = input.name.trim();
   if (await prisma.familyAccount.findFirst({ where: { userId, name: { equals: name, mode: "insensitive" } } })) throw new Error("Счёт с таким названием уже существует.");
@@ -174,7 +273,7 @@ export async function moveFamilyAccount(userId: string, id: string, direction: "
 
 export type FamilyFilters = { from?: string; to?: string; categoryId?: string; accountId?: string; type?: "INCOME" | "EXPENSE" };
 export async function getFamilyTransactions(userId: string, filters: FamilyFilters = {}) {
-  return prisma.transaction.findMany({ where: { userId, module: FinanceModule.FAMILY, deletedAt: null, type: filters.type, categoryId: filters.categoryId, familyAccountId: filters.accountId, ...(filters.from || filters.to ? { operationDate: { ...(filters.from ? { gte: dateFromInput(filters.from) } : {}), ...(filters.to ? { lte: dateFromInput(filters.to) } : {}) } } : {}) }, include: { category: true, familyAccount: true, receipt: true }, orderBy: [{ operationDate: "desc" }, { createdAt: "desc" }] });
+  return prisma.transaction.findMany({ where: { userId, module: FinanceModule.FAMILY, deletedAt: null, type: filters.type, categoryId: filters.categoryId, ...(filters.accountId ? { OR: [{ moneyAccountId: filters.accountId }, { familyAccountId: filters.accountId }] } : {}), ...(filters.from || filters.to ? { operationDate: { ...(filters.from ? { gte: dateFromInput(filters.from) } : {}), ...(filters.to ? { lte: dateFromInput(filters.to) } : {}) } } : {}) }, include: { category: true, familyAccount: true, moneyAccount: true, receipt: true }, orderBy: [{ operationDate: "desc" }, { createdAt: "desc" }] });
 }
 const rangeFor = (period: "TODAY" | "WEEK" | "MONTH" | "THREE_MONTHS" | "YEAR", custom?: { from: string; to: string }) => { const today = dateFromInput(todayInputValue()); if (custom) return { from: dateFromInput(custom.from), to: dateFromInput(custom.to) }; if (period === "THREE_MONTHS") { const from = new Date(today); from.setUTCMonth(from.getUTCMonth() - 2, 1); return { from, to: today }; } return { from: periodStart(period, today), to: today }; };
 export async function getFamilyReport(userId: string, period: "TODAY" | "WEEK" | "MONTH" | "YEAR" = "MONTH") {
@@ -243,4 +342,12 @@ export async function getRecurringPayment(userId: string, id: string) { const it
 export async function updateRecurringPayment(userId: string, id: string, input: z.infer<typeof recurringPaymentSchema>) { const current = await getRecurringPayment(userId, id); if (input.categoryId) await assertFamilyCategory(userId, input.categoryId, "EXPENSE"); await assertFamilyAccount(userId, input.accountId); return prisma.recurringPayment.update({ where: { id: current.id }, data: { name: input.name, amount: decimal(input.amount), categoryId: input.categoryId, familyAccountId: input.accountId, frequency: input.frequency, nextDueDate: dateFromInput(input.nextDueDate), endDate: input.endDate ? dateFromInput(input.endDate) : null, note: input.note } }); }
 export async function toggleRecurringPayment(userId: string, id: string, isActive: boolean) { const current = await getRecurringPayment(userId, id); return prisma.recurringPayment.update({ where: { id: current.id }, data: { isActive } }); }
 export async function archiveRecurringPayment(userId: string, id: string) { const current = await getRecurringPayment(userId, id); return prisma.recurringPayment.update({ where: { id: current.id }, data: { isActive: false, archivedAt: new Date() } }); }
-export async function softDeleteRecurringPaymentOccurrence(userId: string, id: string) { const current = await prisma.transaction.findFirst({ where: { id, userId, module: FinanceModule.FAMILY, recurringPaymentId: { not: null }, deletedAt: null } }); if (!current) throw new Error("Оплата обязательного платежа не найдена."); return prisma.transaction.update({ where: { id: current.id }, data: { deletedAt: new Date() } }); }
+export async function softDeleteRecurringPaymentOccurrence(userId: string, id: string) {
+  const current = await prisma.transaction.findFirst({ where: { id, userId, module: FinanceModule.FAMILY, recurringPaymentId: { not: null }, deletedAt: null } });
+  if (!current) throw new Error("Оплата обязательного платежа не найдена.");
+  return prisma.$transaction(async (database) => {
+    const deletedAt = new Date();
+    await reverseTransactionLedger(database, userId, [current.id], deletedAt);
+    return database.transaction.update({ where: { id: current.id }, data: { deletedAt } });
+  });
+}

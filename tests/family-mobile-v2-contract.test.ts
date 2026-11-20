@@ -25,14 +25,16 @@ describe("Family mobile v2 contract", () => {
     expect(schema).toMatch(/targetDate\s+DateTime\?/);
   });
 
-  it("validates account ownership before writing financial records", () => {
-    expect(service).toContain("assertFamilyAccount");
-    expect(service).toContain("familyAccountId: input.accountId");
+  it("validates MoneyAccount ownership and writes a wallet ledger atomically", () => {
+    expect(service).toContain("assertFamilyWallet");
+    expect(service).toContain("moneyAccountId: wallet.id");
+    expect(service).toContain("moneyLedgerEntry.create");
+    expect(service).toContain("familyAccountId: null");
   });
 
   it("requires a physical wallet for a new income without radio-button account choices", () => {
     expect(quickOperation).toContain('name="accountId"');
-    expect(quickOperation).toContain('required={type === "INCOME"}');
+    expect(quickOperation).toContain('name="accountId" required');
     expect(quickOperation).not.toContain("Без счёта");
     expect(service).toContain("Для дохода выберите кошелёк поступления.");
   });

@@ -76,9 +76,11 @@ describe("Family AI voice integration contracts", () => {
     expect(migration).not.toMatch(/DROP\s+(TABLE|COLUMN)|TRUNCATE|DELETE\s+FROM/i);
   });
 
-  it("uses an upsert so repeated confirmations cannot duplicate a transaction", () => {
+  it("uses the unique request id so repeated confirmations cannot duplicate a transaction or ledger", () => {
     expect(service).toContain("createVoiceFamilyOperation");
-    expect(service).toContain("prisma.transaction.upsert");
+    expect(service).toContain("existingSubmission");
+    expect(service).toContain("isUniqueConflict");
+    expect(service).toContain("createFamilyTransaction");
     expect(service).toContain("userId_voiceRequestId");
     expect(confirmRoute).toContain("missingVoiceFields");
   });

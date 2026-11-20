@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { missingVoiceFields, voiceDraftSchema } from "@/features/family/voice";
 import { getCurrentUser } from "@/server/auth";
-import { createVoiceFamilyOperation, familyOperationSchema } from "@/server/family";
+import { createVoiceFamilyOperation, familyOperationSchema, getPrimaryFamilyWallet } from "@/server/family";
 
 const confirmSchema = z.object({ requestId: z.string().uuid(), draft: voiceDraftSchema });
 
@@ -22,7 +22,9 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: "Некорректный голосовой черновик." }, { status: 400 });
   if (missingVoiceFields(parsed.data.draft).length) return NextResponse.json({ error: "Заполнены не все обязательные поля." }, { status: 400 });
   const { draft, requestId } = parsed.data;
-  const operation = await createVoiceFamilyOperation(user.id, requestId, familyOperationSchema.parse({ type: draft.operationType, amount: draft.amount, operationDate: draft.date, categoryId: draft.categoryId, accountId: null, description: draft.comment || "" }));
-  ["/dashboard", "/family", "/family/operations", "/family/analytics", "/reports", "/finance"].forEach((path) => revalidatePath(path));
+  const wallet = await getPrimaryFamilyWallet(user.id);
+  if (!wallet) return NextResponse.json({ error: "Для голосовой операции назначьте основной кошелёк Family или внесите операцию через форму." }, { status: 400 });
+  const operation = await createVoiceFamilyOperation(user.id, requestId, familyOperationSchema.parse({ type: draft.operationType, amount: draft.amount, operationDate: draft.date, categoryId: draft.categoryId, accountId: wallet.id, description: draft.comment || "" }));
+  ["/dashboard", "/family", "/family/operations", "/family/analytics", "/reports", "/finance", "/safe", "/capital", "/analytics", "/money/envelopes"].forEach((path) => revalidatePath(path));
   return NextResponse.json({ id: operation.id });
 }
