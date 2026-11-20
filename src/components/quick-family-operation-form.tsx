@@ -5,9 +5,10 @@ import { categoryIconImage } from "@/lib/family-category-icons";
 type Category = { id: string; name: string; icon: string | null };
 type Account = { id: string; name: string };
 
-export function QuickFamilyOperationForm({ categories, accounts, type, date, action, recurringPayment }: { categories: Category[]; accounts: Account[]; type: "EXPENSE" | "INCOME"; date: string; action: (formData: FormData) => void | Promise<void>; recurringPayment?: { id: string; amount: string; categoryId: string | null; accountId: string | null; name: string } }) {
+export function QuickFamilyOperationForm({ categories, accounts, type, date, requestId, action, recurringPayment }: { categories: Category[]; accounts: Account[]; type: "EXPENSE" | "INCOME"; date: string; requestId: string; action: (formData: FormData) => void | Promise<void>; recurringPayment?: { id: string; amount: string; categoryId: string | null; accountId: string | null; name: string } }) {
   return <form action={action} className={`money-entry ${type === "EXPENSE" ? "money-entry-expense" : "money-entry-income"}`}>
     <input type="hidden" name="type" value={type}/>
+    <input type="hidden" name="requestId" value={requestId}/>
     {recurringPayment && <input type="hidden" name="recurringPaymentId" value={recurringPayment.id}/>}
 
     <label className="money-entry-row money-entry-amount-row">
@@ -23,7 +24,7 @@ export function QuickFamilyOperationForm({ categories, accounts, type, date, act
       </div>
     </details>
 
-    <label className="money-account-select"><span>{type === "INCOME" ? "Кошелёк поступления" : "Счёт оплаты"}</span><select name="accountId" required={type === "INCOME"} defaultValue={recurringPayment?.accountId ?? ""}><option value="" disabled>Выберите кошелёк</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
+    <label className="money-account-select"><span>{type === "INCOME" ? "Кошелёк поступления" : "Кошелёк оплаты"}</span><select name="accountId" required defaultValue={recurringPayment?.accountId ?? ""}><option value="" disabled>Выберите кошелёк</option>{accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}</select></label>
 
     <section className="money-entry-details money-entry-note-fields">
       <header>Дата и комментарий</header>
